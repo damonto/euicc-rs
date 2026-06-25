@@ -1,0 +1,39 @@
+# Cargo build output.
+/target/
+
+# Rust toolchain byproducts.
+**/*.rs.bk
+*.pdb
+rustc-ice-*.txt
+
+# Local environment files.
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files.
+*.log
+*.tmp
+*.temp
+/tmp/
+
+# Coverage and profiling output.
+/coverage/
+/tarpaulin-report.html
+*.profraw
+*.profdata
+
+# Editor and OS metadata.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Local dependency overrides.
+/.cargo/config.toml
+
+# AI
+.codex
+AGENTS.md

@@ -1,0 +1,43 @@
+[package]
+name = "euicc-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT"
+description = "SGP.22 eUICC profile-management protocol primitives for Rust."
+
+[lib]
+name = "euicc"
+path = "src/lib.rs"
+
+[features]
+default = []
+ccid = ["uicc/ccid"]
+at = ["uicc/at"]
+mbim-linux = ["uicc/mbim-linux"]
+qmi-linux = ["uicc/qmi-linux"]
+qrtr-linux = ["uicc/qrtr-linux"]
+
+[[example]]
+name = "ccid_lpa"
+path = "examples/ccid_lpa.rs"
+required-features = ["ccid"]
+
+[[example]]
+name = "qmi_lpa"
+path = "examples/qmi_lpa.rs"
+required-features = ["qmi-linux"]
+
+[dependencies]
+async-trait = "0.1"
+base64 = "0.22"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+uicc = { package = "uicc-rs", git = "https://github.com/damonto/uicc-rs.git", branch = "main" }
+url = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
