@@ -6,26 +6,6 @@ use crate::error::{EuiccError, Result};
 use crate::primitive::decode_i64;
 
 /// ES10a.GetEuiccConfiguredAddresses request.
-///
-/// # Arguments
-///
-/// This zero-sized request has no command parameters.
-///
-/// # Returns
-///
-/// A request encoded as `[60] SEQUENCE`.
-///
-/// # Errors
-///
-/// Encoding does not fail unless TLV construction invariants are violated.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::es10a::EuiccConfiguredAddressesRequest.to_tlv()?;
-/// assert_eq!(tlv.to_bytes()?, vec![0xBF, 0x3C, 0x00]);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct EuiccConfiguredAddressesRequest;
 
@@ -45,29 +25,10 @@ impl CardRequest for EuiccConfiguredAddressesRequest {
 
 /// ES10a.GetEuiccConfiguredAddresses response.
 ///
-/// # Arguments
-///
-/// Use [`EuiccConfiguredAddressesResponse::from_tlv`] to decode from card data.
-///
-/// # Returns
-///
-/// Optional default SM-DP+ address and mandatory root SM-DS address.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError::UnexpectedTag`] when the response tag is not
 /// `[60]`.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(60),
-///     Vec::new(),
-/// )?;
-/// assert!(euicc::es10a::EuiccConfiguredAddressesResponse::from_tlv(&tlv).is_err());
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EuiccConfiguredAddressesResponse {
     /// Default SM-DP+ address when configured.
@@ -97,28 +58,9 @@ impl DecodeTlv for EuiccConfiguredAddressesResponse {
 impl EuiccConfiguredAddressesResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[60]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded configured addresses.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError::UnexpectedTag`] when the tag is not `[60]`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(60),
-    ///     Vec::new(),
-    /// )?;
-    /// assert!(euicc::es10a::EuiccConfiguredAddressesResponse::from_tlv(&tlv).is_err());
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -128,28 +70,10 @@ impl CardResponse for EuiccConfiguredAddressesResponse {}
 
 /// ES10a.SetDefaultDpAddress request.
 ///
-/// # Arguments
-///
-/// This struct is built from the public `default_dp_address` field.
-///
-/// # Returns
-///
-/// A `[63] SEQUENCE` request.
-///
 /// # Errors
 ///
 /// Encoding returns [`EuiccError::InvalidText`] when the address exceeds the
 /// one-byte APDU segment limit after UTF-8 encoding.
-///
-/// # Examples
-///
-/// ```
-/// let request = euicc::es10a::SetDefaultDpAddressRequest {
-///     default_dp_address: "smdp.example".to_owned(),
-/// };
-/// assert_eq!(request.to_tlv()?.tag().value(), 63);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SetDefaultDpAddressRequest {
     /// New default SM-DP+ address. Empty string removes the configured address.
@@ -178,26 +102,9 @@ impl CardRequest for SetDefaultDpAddressRequest {
 
 /// Result code for SetDefaultDpAddress.
 ///
-/// # Arguments
-///
-/// Values are decoded from the card response integer.
-///
-/// # Returns
-///
-/// A typed result code.
-///
 /// # Errors
 ///
 /// Unknown values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::es10a::SetDefaultDpAddressResult::from_i64(0),
-///     euicc::es10a::SetDefaultDpAddressResult::Ok,
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SetDefaultDpAddressResult {
     /// Operation completed successfully.
@@ -210,27 +117,6 @@ pub enum SetDefaultDpAddressResult {
 
 impl SetDefaultDpAddressResult {
     /// Decodes a signed result code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed integer card result.
-    ///
-    /// # Returns
-    ///
-    /// A typed result code.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::es10a::SetDefaultDpAddressResult::from_i64(127),
-    ///     euicc::es10a::SetDefaultDpAddressResult::UndefinedError,
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -243,32 +129,9 @@ impl SetDefaultDpAddressResult {
 
 /// ES10a.SetDefaultDpAddress response.
 ///
-/// # Arguments
-///
-/// Use [`SetDefaultDpAddressResponse::from_tlv`] to decode from card data.
-///
-/// # Returns
-///
-/// The card result code.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the tag or result field is malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(63),
-///     vec![euicc::bertlv::Tlv::primitive(
-///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-///         [0x00],
-///     )?],
-/// )?;
-/// let response = euicc::es10a::SetDefaultDpAddressResponse::from_tlv(&tlv)?;
-/// response.validate()?;
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SetDefaultDpAddressResponse {
     /// Card result code.
@@ -292,34 +155,9 @@ impl DecodeTlv for SetDefaultDpAddressResponse {
 impl SetDefaultDpAddressResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[63]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded response.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the tag or result field is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(63),
-    ///     vec![euicc::bertlv::Tlv::primitive(
-    ///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-    ///         [0x00],
-    ///     )?],
-    /// )?;
-    /// assert_eq!(
-    ///     euicc::es10a::SetDefaultDpAddressResponse::from_tlv(&tlv)?.result,
-    ///     euicc::es10a::SetDefaultDpAddressResult::Ok,
-    /// );
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -342,26 +180,10 @@ macro_rules! inherent_to_tlv {
             impl $ty {
                 /// Encodes this request as an ES10 BER-TLV object.
                 ///
-                /// # Arguments
-                ///
-                /// This method takes no arguments.
-                ///
-                /// # Returns
-                ///
-                /// The encoded request TLV.
-                ///
                 /// # Errors
                 ///
                 /// Returns protocol validation or TLV construction errors from
                 /// the request-specific encoder.
-                ///
-                /// # Examples
-                ///
-                /// ```
-                /// let tlv = euicc::es10a::EuiccConfiguredAddressesRequest.to_tlv()?;
-                /// assert_eq!(tlv.tag().value(), 60);
-                /// # Ok::<(), euicc::EuiccError>(())
-                /// ```
 
                 pub fn to_tlv(&self) -> Result<Tlv> {
                     <Self as EncodeTlv>::to_tlv(self)
@@ -379,29 +201,10 @@ macro_rules! inherent_validate {
             impl $ty {
                 /// Validates the decoded ES10 response.
                 ///
-                /// # Arguments
-                ///
-                /// This method takes no arguments.
-                ///
-                /// # Returns
-                ///
-                /// `Ok(())` when the response represents success.
-                ///
                 /// # Errors
                 ///
                 /// Returns a protocol-specific [`EuiccError`] for card-level
                 /// failure result codes.
-                ///
-                /// # Examples
-                ///
-                /// ```
-                /// let response = euicc::es10a::EuiccConfiguredAddressesResponse {
-                ///     default_smdp_address: None,
-                ///     root_smds_address: "root.example".to_owned(),
-                /// };
-                /// response.validate()?;
-                /// # Ok::<(), euicc::EuiccError>(())
-                /// ```
 
                 pub fn validate(&self) -> Result<()> {
                     <Self as CardResponse>::validate(self)

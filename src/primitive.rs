@@ -3,25 +3,6 @@
 use crate::error::{EuiccError, Result};
 
 /// Encodes a signed integer using the shortest two's-complement BER form.
-///
-/// # Arguments
-///
-/// * `value` - Signed integer value to encode.
-///
-/// # Returns
-///
-/// A newly allocated minimal two's-complement big-endian encoding.
-///
-/// # Errors
-///
-/// This function does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::primitive::encode_i64(128), vec![0x00, 0x80]);
-/// assert_eq!(euicc::primitive::encode_i64(-1), vec![0xFF]);
-/// ```
 #[must_use]
 pub fn encode_i64(value: i64) -> Vec<u8> {
     let bytes = value.to_be_bytes();
@@ -39,26 +20,9 @@ pub fn encode_i64(value: i64) -> Vec<u8> {
 
 /// Decodes a signed integer from a BER two's-complement value.
 ///
-/// # Arguments
-///
-/// * `data` - BER integer payload bytes.
-/// * `max_bytes` - Maximum accepted payload width for the target type.
-///
-/// # Returns
-///
-/// The decoded signed integer as `i64`.
-///
 /// # Errors
 ///
 /// Returns [`EuiccError::IntegerTooLarge`] when `data.len() > max_bytes`.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::primitive::decode_i64(&[0xFF], 1)?, -1);
-/// assert_eq!(euicc::primitive::decode_i64(&[0x00, 0x80], 2)?, 128);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn decode_i64(data: &[u8], max_bytes: usize) -> Result<i64> {
     if data.is_empty() {
         return Ok(0);
@@ -78,76 +42,18 @@ pub fn decode_i64(data: &[u8], max_bytes: usize) -> Result<i64> {
 }
 
 /// Encodes a BER boolean.
-///
-/// # Arguments
-///
-/// * `value` - Boolean value to encode.
-///
-/// # Returns
-///
-/// DER uses `0xFF` for true and `0x00` for false.
-///
-/// # Errors
-///
-/// This function does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::primitive::encode_bool(true), [0xFF]);
-/// assert_eq!(euicc::primitive::encode_bool(false), [0x00]);
-/// ```
 #[must_use]
 pub const fn encode_bool(value: bool) -> [u8; 1] {
     if value { [0xFF] } else { [0x00] }
 }
 
 /// Decodes a BER boolean.
-///
-/// # Arguments
-///
-/// * `data` - Boolean payload bytes.
-///
-/// # Returns
-///
-/// `true` only for the canonical DER `0xFF` payload.
-///
-/// # Errors
-///
-/// This function does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert!(euicc::primitive::decode_bool(&[0xFF]));
-/// assert!(!euicc::primitive::decode_bool(&[0x01]));
-/// ```
 #[must_use]
 pub fn decode_bool(data: &[u8]) -> bool {
     data == [0xFF]
 }
 
 /// Encodes a BER bit string from most-significant-bit-first flags.
-///
-/// # Arguments
-///
-/// * `bits` - Boolean flags in wire-order.
-///
-/// # Returns
-///
-/// A BER bit string payload whose first byte is the number of unused trailing
-/// bits in the last data byte.
-///
-/// # Errors
-///
-/// This function does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let bits = [false, true, true, false, true, true, true, false, false, true];
-/// assert_eq!(euicc::primitive::encode_bit_string(&bits), vec![0x06, 0x6E, 0x40]);
-/// ```
 #[must_use]
 pub fn encode_bit_string(bits: &[bool]) -> Vec<u8> {
     let padding_bits = (8 - bits.len() % 8) % 8;
@@ -165,26 +71,10 @@ pub fn encode_bit_string(bits: &[bool]) -> Vec<u8> {
 
 /// Decodes a BER bit string into most-significant-bit-first flags.
 ///
-/// # Arguments
-///
-/// * `data` - BER bit string payload bytes.
-///
-/// # Returns
-///
-/// Boolean flags in wire-order.
-///
 /// # Errors
 ///
 /// Returns [`EuiccError::InvalidBitStringPadding`] when the payload has invalid
 /// padding metadata or non-zero padding bits.
-///
-/// # Examples
-///
-/// ```
-/// let bits = euicc::primitive::decode_bit_string(&[0x06, 0x6E, 0x5D, 0xC0])?;
-/// assert_eq!(euicc::primitive::bit_string_to_text(&bits), "011011100101110111");
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn decode_bit_string(data: &[u8]) -> Result<Vec<bool>> {
     let Some((&padding, payload)) = data.split_first() else {
         return Err(EuiccError::InvalidBitStringPadding);
@@ -210,24 +100,6 @@ pub fn decode_bit_string(data: &[u8]) -> Result<Vec<bool>> {
 }
 
 /// Converts bit flags to a compact `0`/`1` string.
-///
-/// # Arguments
-///
-/// * `bits` - Boolean flags to render.
-///
-/// # Returns
-///
-/// A string with one ASCII digit per bit.
-///
-/// # Errors
-///
-/// This function does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::primitive::bit_string_to_text(&[true, false, true]), "101");
-/// ```
 #[must_use]
 pub fn bit_string_to_text(bits: &[bool]) -> String {
     let mut out = String::with_capacity(bits.len());

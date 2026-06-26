@@ -851,7 +851,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52d1cfed4120b4d927bf7c0f86d2087a4a7d6027c906d9f9d525a80573b9be51"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1069,7 +1069,7 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 [[package]]
 name = "uicc-rs"
 version = "0.1.0"
-source = "git+https://github.com/damonto/uicc-rs.git?branch=main#9e1491ca3fa90df065107fc6f0dbbb41608f7a04"
+source = "git+https://github.com/damonto/uicc-rs.git?branch=main#e8e139ed45b8a30af5dcb8f80f0c80df3e8c0582"
 dependencies = [
  "async-trait",
  "bytes",

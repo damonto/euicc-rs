@@ -4,24 +4,9 @@ use super::MAX_LENGTH;
 
 /// Encodes a BER length using short or definite long form.
 ///
-/// # Arguments
-///
-/// * `length` - Content length to encode.
-///
-/// # Returns
-///
-/// Encoded BER length bytes.
-///
 /// # Errors
 ///
 /// Returns [`EuiccError::LengthTooLarge`] when `length > 0xFF_FF_FF`.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::bertlv::encode_length(0x100)?, vec![0x82, 0x01, 0x00]);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn encode_length(length: usize) -> Result<Vec<u8>> {
     match length {
         0..=0x7F => Ok(vec![length as u8]),
@@ -42,25 +27,10 @@ pub fn encode_length(length: usize) -> Result<Vec<u8>> {
 
 /// Decodes a BER length from the front of `data`.
 ///
-/// # Arguments
-///
-/// * `data` - Bytes beginning with a BER length.
-///
-/// # Returns
-///
-/// The decoded length and number of consumed bytes.
-///
 /// # Errors
 ///
 /// Returns [`EuiccError::LengthEncoding`] for unsupported indefinite or
 /// truncated encodings.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::bertlv::decode_length(&[0x81, 0x80])?, (0x80, 2));
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn decode_length(data: &[u8]) -> Result<(usize, usize)> {
     let Some(&first) = data.first() else {
         return Err(EuiccError::LengthEncoding(

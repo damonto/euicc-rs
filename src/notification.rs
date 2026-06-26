@@ -6,96 +6,23 @@ use crate::identifier::Iccid;
 use crate::primitive::{decode_bit_string, decode_i64, encode_bit_string, encode_i64};
 
 /// Notification sequence number.
-///
-/// # Arguments
-///
-/// This newtype wraps the signed integer used by SGP.22 notification commands.
-///
-/// # Returns
-///
-/// A typed sequence number that cannot be mixed with other integers by accident.
-///
-/// # Errors
-///
-/// Constructing this type does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let number = euicc::notification::SequenceNumber::new(7);
-/// assert_eq!(number.value(), 7);
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct SequenceNumber(i64);
 
 impl SequenceNumber {
     /// Creates a sequence number.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed sequence number value.
-    ///
-    /// # Returns
-    ///
-    /// A [`SequenceNumber`] wrapper.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::notification::SequenceNumber::new(3).value(), 3);
-    /// ```
     #[must_use]
     pub const fn new(value: i64) -> Self {
         Self(value)
     }
 
     /// Returns the wrapped sequence number.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The signed sequence number.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::notification::SequenceNumber::new(3).value(), 3);
-    /// ```
     #[must_use]
     pub const fn value(self) -> i64 {
         self.0
     }
 
     /// Encodes this sequence number as a BER integer payload.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// Minimal two's-complement bytes.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::notification::SequenceNumber::new(1).to_bytes(), vec![0x01]);
-    /// ```
     #[must_use]
     pub fn to_bytes(self) -> Vec<u8> {
         encode_i64(self.0)
@@ -104,25 +31,10 @@ impl SequenceNumber {
 
 /// Profile management operation represented by notification bit strings.
 ///
-/// # Arguments
-///
-/// Variants map to the four bits defined by SGP.22 notification filters.
-///
-/// # Returns
-///
-/// A typed notification event.
-///
 /// # Errors
 ///
 /// Decoding from bits returns [`EuiccError::MalformedTlv`] when no event bit is
 /// set.
-///
-/// # Examples
-///
-/// ```
-/// let event = euicc::notification::NotificationEvent::Delete;
-/// assert_eq!(event.bit_index(), 3);
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum NotificationEvent {
     /// Install notification.
@@ -137,24 +49,6 @@ pub enum NotificationEvent {
 
 impl NotificationEvent {
     /// Returns this event's bit index.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The zero-based SGP.22 bit index.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::notification::NotificationEvent::Install.bit_index(), 0);
-    /// ```
     #[must_use]
     pub const fn bit_index(self) -> usize {
         match self {
@@ -167,26 +61,10 @@ impl NotificationEvent {
 
     /// Decodes an event from a BER bit-string payload.
     ///
-    /// # Arguments
-    ///
-    /// * `data` - BER bit string payload.
-    ///
-    /// # Returns
-    ///
-    /// The single set notification event.
-    ///
     /// # Errors
     ///
     /// Returns bit-string decoding errors or [`EuiccError::MalformedTlv`] when
     /// no supported event bit is set or multiple bits are set.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let event = euicc::notification::NotificationEvent::from_bytes(&[0x04, 0x10])?;
-    /// assert_eq!(event, euicc::notification::NotificationEvent::Delete);
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let bits = decode_bit_string(data)?;
         let mut event = None;
@@ -211,27 +89,6 @@ impl NotificationEvent {
     }
 
     /// Encodes this event as a BER bit-string payload.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// BER bit string payload with exactly one event bit set.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::notification::NotificationEvent::Install.to_bytes(),
-    ///     vec![0x04, 0x80],
-    /// );
-    /// ```
     #[must_use]
     pub fn to_bytes(self) -> Vec<u8> {
         let mut bits = [false; 4];
@@ -242,43 +99,10 @@ impl NotificationEvent {
 
 /// Notification metadata decoded from ES10b responses.
 ///
-/// # Arguments
-///
-/// Use [`NotificationMetadata::from_tlv`] to decode from card TLV data.
-///
-/// # Returns
-///
-/// Sequence number, operation, server address, and optional ICCID.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when mandatory TLV fields are missing or
 /// malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(47),
-///     vec![
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::ContextSpecific.primitive(0),
-///             [0x01],
-///         )?,
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::ContextSpecific.primitive(1),
-///             euicc::notification::NotificationEvent::Install.to_bytes(),
-///         )?,
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::Universal.primitive(12),
-///             b"smdp.example",
-///         )?,
-///     ],
-/// )?;
-/// let metadata = euicc::notification::NotificationMetadata::from_tlv(&tlv)?;
-/// assert_eq!(metadata.sequence_number, euicc::notification::SequenceNumber::new(1));
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NotificationMetadata {
     /// Notification sequence number.
@@ -323,42 +147,9 @@ impl DecodeTlv for NotificationMetadata {
 impl NotificationMetadata {
     /// Decodes notification metadata from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `context-specific constructed 47` metadata TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded [`NotificationMetadata`].
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when mandatory fields are missing or malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(47),
-    ///     vec![
-    ///         euicc::bertlv::Tlv::primitive(
-    ///             euicc::bertlv::Class::ContextSpecific.primitive(0),
-    ///             [0x01],
-    ///         )?,
-    ///         euicc::bertlv::Tlv::primitive(
-    ///             euicc::bertlv::Class::ContextSpecific.primitive(1),
-    ///             euicc::notification::NotificationEvent::Install.to_bytes(),
-    ///         )?,
-    ///         euicc::bertlv::Tlv::primitive(
-    ///             euicc::bertlv::Class::Universal.primitive(12),
-    ///             b"smdp.example",
-    ///         )?,
-    ///     ],
-    /// )?;
-    /// let metadata = euicc::notification::NotificationMetadata::from_tlv(&tlv)?;
-    /// assert_eq!(metadata.sequence_number.value(), 1);
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -366,47 +157,10 @@ impl NotificationMetadata {
 
 /// Pending notification wrapper returned by RetrieveNotificationsList.
 ///
-/// # Arguments
-///
-/// Use [`PendingNotification::from_tlv`] to decode the card response branch.
-///
-/// # Returns
-///
-/// The raw pending-notification TLV plus decoded metadata.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the pending notification shape is
 /// malformed.
-///
-/// # Examples
-///
-/// ```
-/// let metadata = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(47),
-///     vec![
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::ContextSpecific.primitive(0),
-///             [0x01],
-///         )?,
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::ContextSpecific.primitive(1),
-///             euicc::notification::NotificationEvent::Delete.to_bytes(),
-///         )?,
-///         euicc::bertlv::Tlv::primitive(
-///             euicc::bertlv::Class::Universal.primitive(12),
-///             b"smdp.example",
-///         )?,
-///     ],
-/// )?;
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::Universal.constructed(16),
-///     vec![metadata],
-/// )?;
-/// let pending = euicc::notification::PendingNotification::from_tlv(&tlv)?;
-/// assert_eq!(pending.notification.operation, euicc::notification::NotificationEvent::Delete);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PendingNotification {
     /// Raw pending notification TLV to send to ES9+.HandleNotification.
@@ -448,28 +202,9 @@ impl DecodeTlv for PendingNotification {
 impl PendingNotification {
     /// Decodes a pending notification from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - A `PendingNotification` CHOICE TLV.
-    ///
-    /// # Returns
-    ///
-    /// A decoded [`PendingNotification`].
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the wrapper or metadata is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::Universal.constructed(16),
-    ///     Vec::new(),
-    /// )?;
-    /// assert!(euicc::notification::PendingNotification::from_tlv(&tlv).is_err());
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }

@@ -10,28 +10,6 @@ use crate::primitive::{decode_i64, encode_bit_string, encode_bool, encode_i64};
 use crate::profile::ProfileInfo;
 
 /// Profile identifier used by ES10c profile operations.
-///
-/// # Arguments
-///
-/// Variants encode either ICCID or ISD-P AID.
-///
-/// # Returns
-///
-/// A typed profile identifier.
-///
-/// # Errors
-///
-/// Constructing this enum does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let id = euicc::es10c::ProfileIdentifier::Iccid(
-///     euicc::identifier::Iccid::new("8944478600004573128")?,
-/// );
-/// assert!(matches!(id, euicc::es10c::ProfileIdentifier::Iccid(_)));
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProfileIdentifier {
     /// ICCID profile identifier.
@@ -52,27 +30,6 @@ impl ProfileIdentifier {
 }
 
 /// Search criterion for ES10c.GetProfilesInfo.
-///
-/// # Arguments
-///
-/// Variants encode ICCID, ISD-P AID, or profile class criteria.
-///
-/// # Returns
-///
-/// A typed profile search criterion.
-///
-/// # Errors
-///
-/// Constructing this enum does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let criterion = euicc::es10c::ProfileSearchCriterion::Class(
-///     euicc::identifier::ProfileClass::Operational,
-/// );
-/// assert!(matches!(criterion, euicc::es10c::ProfileSearchCriterion::Class(_)));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProfileSearchCriterion {
     /// Search by ICCID.
@@ -105,28 +62,9 @@ impl ProfileSearchCriterion {
 
 /// ES10c.GetProfilesInfo request.
 ///
-/// # Arguments
-///
-/// Build with optional search criteria and optional tag list.
-///
-/// # Returns
-///
-/// A `[45] SEQUENCE` request.
-///
 /// # Errors
 ///
 /// Encoding returns TLV construction errors if fields are inconsistent.
-///
-/// # Examples
-///
-/// ```
-/// let request = euicc::es10c::ProfileInfoListRequest {
-///     search_criterion: None,
-///     tags: Vec::new(),
-/// };
-/// assert_eq!(request.to_tlv()?.to_bytes()?, vec![0xBF, 0x2D, 0x00]);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ProfileInfoListRequest {
     /// Optional search criterion.
@@ -162,30 +100,10 @@ impl CardRequest for ProfileInfoListRequest {
 
 /// ES10c.GetProfilesInfo response.
 ///
-/// # Arguments
-///
-/// Use [`ProfileInfoListResponse::from_tlv`] to decode card data.
-///
-/// # Returns
-///
-/// A list of profile metadata entries.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when profile entries or error result fields
 /// are malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(45),
-///     Vec::new(),
-/// )?;
-/// let response = euicc::es10c::ProfileInfoListResponse::from_tlv(&tlv)?;
-/// assert!(response.profiles.is_empty());
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ProfileInfoListResponse {
     /// Decoded profiles.
@@ -226,29 +144,10 @@ impl DecodeTlv for ProfileInfoListResponse {
 impl ProfileInfoListResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[45]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded profile list.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the response is malformed or contains an
     /// error result.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(45),
-    ///     Vec::new(),
-    /// )?;
-    /// assert!(euicc::es10c::ProfileInfoListResponse::from_tlv(&tlv)?.profiles.is_empty());
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -258,31 +157,9 @@ impl CardResponse for ProfileInfoListResponse {}
 
 /// ES10c profile operation request.
 ///
-/// # Arguments
-///
-/// Build with operation, identifier, and refresh flag.
-///
-/// # Returns
-///
-/// A `[49]`, `[50]`, or `[51]` request.
-///
 /// # Errors
 ///
 /// Encoding returns TLV construction errors if fields are inconsistent.
-///
-/// # Examples
-///
-/// ```
-/// let request = euicc::es10c::ProfileOperationRequest {
-///     operation: euicc::error::ProfileOperation::Delete,
-///     identifier: euicc::es10c::ProfileIdentifier::Iccid(
-///         euicc::identifier::Iccid::new("8944478600004573128")?,
-///     ),
-///     refresh: false,
-/// };
-/// assert_eq!(request.to_tlv()?.tag().value(), 51);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProfileOperationRequest {
     /// Operation to execute.
@@ -321,35 +198,9 @@ impl CardRequest for ProfileOperationRequest {
 
 /// ES10c profile operation response.
 ///
-/// # Arguments
-///
-/// Use [`ProfileOperationResponse::from_tlv`] with the operation being decoded.
-///
-/// # Returns
-///
-/// The operation and result code.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the tag or result field is malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(49),
-///     vec![euicc::bertlv::Tlv::primitive(
-///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-///         [0x00],
-///     )?],
-/// )?;
-/// let response = euicc::es10c::ProfileOperationResponse::from_tlv(
-///     euicc::error::ProfileOperation::Enable,
-///     &tlv,
-/// )?;
-/// response.validate()?;
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ProfileOperationResponse {
     /// Operation represented by this response.
@@ -361,39 +212,9 @@ pub struct ProfileOperationResponse {
 impl ProfileOperationResponse {
     /// Decodes a profile operation response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `operation` - Operation used to determine the expected response tag.
-    /// * `tlv` - Response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded operation response.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the tag or result field is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(51),
-    ///     vec![euicc::bertlv::Tlv::primitive(
-    ///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-    ///         [0x00],
-    ///     )?],
-    /// )?;
-    /// assert_eq!(
-    ///     euicc::es10c::ProfileOperationResponse::from_tlv(
-    ///         euicc::error::ProfileOperation::Delete,
-    ///         &tlv,
-    ///     )?
-    ///     .result,
-    ///     euicc::error::ProfileOperationResult::Ok,
-    /// );
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(operation: ProfileOperation, tlv: &Tlv) -> Result<Self> {
         ensure_tag(tlv, operation.tag_value(), "profileOperationResponse")?;
         Ok(Self {
@@ -435,30 +256,6 @@ impl CardResponse for ProfileOperationResponse {
 }
 
 /// ES10c.eUICCMemoryReset request.
-///
-/// # Arguments
-///
-/// Build from the three reset option booleans.
-///
-/// # Returns
-///
-/// A `[52] SEQUENCE` request.
-///
-/// # Errors
-///
-/// Encoding does not fail unless TLV construction invariants are violated.
-///
-/// # Examples
-///
-/// ```
-/// let request = euicc::es10c::EuiccMemoryResetRequest {
-///     delete_operational_profiles: true,
-///     delete_field_loaded_test_profiles: false,
-///     reset_default_smdp_address: false,
-/// };
-/// assert_eq!(request.to_tlv()?.tag().value(), 52);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct EuiccMemoryResetRequest {
     /// Delete operational profiles.
@@ -495,26 +292,9 @@ impl CardRequest for EuiccMemoryResetRequest {
 
 /// Memory reset result code.
 ///
-/// # Arguments
-///
-/// Values are decoded from the card response integer.
-///
-/// # Returns
-///
-/// A typed memory reset result.
-///
 /// # Errors
 ///
 /// Unknown values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::es10c::EuiccMemoryResetResult::from_i64(5),
-///     euicc::es10c::EuiccMemoryResetResult::CatBusy,
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum EuiccMemoryResetResult {
     /// Operation completed successfully.
@@ -531,27 +311,6 @@ pub enum EuiccMemoryResetResult {
 
 impl EuiccMemoryResetResult {
     /// Decodes a signed memory reset result code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed integer result.
-    ///
-    /// # Returns
-    ///
-    /// A typed result code.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::es10c::EuiccMemoryResetResult::from_i64(1),
-    ///     euicc::es10c::EuiccMemoryResetResult::NothingToDelete,
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -566,31 +325,9 @@ impl EuiccMemoryResetResult {
 
 /// ES10c.eUICCMemoryReset response.
 ///
-/// # Arguments
-///
-/// Use [`EuiccMemoryResetResponse::from_tlv`] to decode from card data.
-///
-/// # Returns
-///
-/// Memory reset result.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the response is malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(52),
-///     vec![euicc::bertlv::Tlv::primitive(
-///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-///         [0x00],
-///     )?],
-/// )?;
-/// euicc::es10c::EuiccMemoryResetResponse::from_tlv(&tlv)?.validate()?;
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct EuiccMemoryResetResponse {
     /// Memory reset result code.
@@ -614,34 +351,9 @@ impl DecodeTlv for EuiccMemoryResetResponse {
 impl EuiccMemoryResetResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[52]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded memory reset response.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the response is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(52),
-    ///     vec![euicc::bertlv::Tlv::primitive(
-    ///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-    ///         [0x00],
-    ///     )?],
-    /// )?;
-    /// assert_eq!(
-    ///     euicc::es10c::EuiccMemoryResetResponse::from_tlv(&tlv)?.result,
-    ///     euicc::es10c::EuiccMemoryResetResult::Ok,
-    /// );
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -661,25 +373,6 @@ impl CardResponse for EuiccMemoryResetResponse {
 }
 
 /// ES10c.GetEID request.
-///
-/// # Arguments
-///
-/// This zero-sized request has no command parameters.
-///
-/// # Returns
-///
-/// A `[62] SEQUENCE` request with tagList set to `5A`.
-///
-/// # Errors
-///
-/// Encoding does not fail unless TLV construction invariants are violated.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::es10c::GetEuiccDataRequest.to_tlv()?.tag().value(), 62);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct GetEuiccDataRequest;
 
@@ -705,32 +398,9 @@ impl CardRequest for GetEuiccDataRequest {
 
 /// ES10c.GetEID response.
 ///
-/// # Arguments
-///
-/// Use [`GetEuiccDataResponse::from_tlv`] to decode from card data.
-///
-/// # Returns
-///
-/// Raw EID bytes.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError::MissingField`] when tag `5A` is absent.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(62),
-///     vec![euicc::bertlv::Tlv::primitive(
-///         euicc::bertlv::Class::Application.primitive(26),
-///         [0x12; 16],
-///     )?],
-/// )?;
-/// let response = euicc::es10c::GetEuiccDataResponse::from_tlv(&tlv)?;
-/// assert_eq!(response.eid.len(), 16);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetEuiccDataResponse {
     /// EID bytes.
@@ -749,31 +419,9 @@ impl DecodeTlv for GetEuiccDataResponse {
 impl GetEuiccDataResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[62]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded EID response.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the response is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(62),
-    ///     vec![euicc::bertlv::Tlv::primitive(
-    ///         euicc::bertlv::Class::Application.primitive(26),
-    ///         [0x12; 16],
-    ///     )?],
-    /// )?;
-    /// assert_eq!(euicc::es10c::GetEuiccDataResponse::from_tlv(&tlv)?.eid.len(), 16);
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -783,29 +431,10 @@ impl CardResponse for GetEuiccDataResponse {}
 
 /// ES10c.SetNickname request.
 ///
-/// # Arguments
-///
-/// Build from ICCID and nickname text.
-///
-/// # Returns
-///
-/// A `[41] SEQUENCE` request.
-///
 /// # Errors
 ///
 /// Encoding returns [`EuiccError::InvalidText`] when the nickname exceeds
 /// 64 UTF-8 bytes.
-///
-/// # Examples
-///
-/// ```
-/// let request = euicc::es10c::SetNicknameRequest {
-///     iccid: euicc::identifier::Iccid::new("8944478600004573128")?,
-///     nickname: "work".to_owned(),
-/// };
-/// assert_eq!(request.to_tlv()?.tag().value(), 41);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetNicknameRequest {
     /// Profile ICCID.
@@ -817,28 +446,9 @@ pub struct SetNicknameRequest {
 impl SetNicknameRequest {
     /// Validates nickname constraints.
     ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// `Ok(())` when the nickname is at most 64 bytes.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError::InvalidText`] when the nickname is too long.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let request = euicc::es10c::SetNicknameRequest {
-    ///     iccid: euicc::identifier::Iccid::new("8944478600004573128")?,
-    ///     nickname: "work".to_owned(),
-    /// };
-    /// request.validate()?;
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn validate(&self) -> Result<()> {
         if self.nickname.len() > 64 {
             return Err(EuiccError::InvalidText("profile nickname too long"));
@@ -873,26 +483,9 @@ impl CardRequest for SetNicknameRequest {
 
 /// SetNickname result code.
 ///
-/// # Arguments
-///
-/// Values are decoded from the card response integer.
-///
-/// # Returns
-///
-/// A typed nickname result.
-///
 /// # Errors
 ///
 /// Unknown values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::es10c::SetNicknameResult::from_i64(1),
-///     euicc::es10c::SetNicknameResult::IccidNotFound,
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SetNicknameResult {
     /// Operation completed successfully.
@@ -907,27 +500,6 @@ pub enum SetNicknameResult {
 
 impl SetNicknameResult {
     /// Decodes a signed nickname result code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed integer result.
-    ///
-    /// # Returns
-    ///
-    /// A typed result code.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::es10c::SetNicknameResult::from_i64(127),
-    ///     euicc::es10c::SetNicknameResult::UndefinedError,
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -941,31 +513,9 @@ impl SetNicknameResult {
 
 /// ES10c.SetNickname response.
 ///
-/// # Arguments
-///
-/// Use [`SetNicknameResponse::from_tlv`] to decode from card data.
-///
-/// # Returns
-///
-/// SetNickname result.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the response is malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(41),
-///     vec![euicc::bertlv::Tlv::primitive(
-///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-///         [0x00],
-///     )?],
-/// )?;
-/// euicc::es10c::SetNicknameResponse::from_tlv(&tlv)?.validate()?;
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SetNicknameResponse {
     /// Nickname result code.
@@ -989,34 +539,9 @@ impl DecodeTlv for SetNicknameResponse {
 impl SetNicknameResponse {
     /// Decodes the response from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `[41]` response TLV.
-    ///
-    /// # Returns
-    ///
-    /// Decoded SetNickname response.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the response is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(41),
-    ///     vec![euicc::bertlv::Tlv::primitive(
-    ///         euicc::bertlv::Class::ContextSpecific.primitive(0),
-    ///         [0x00],
-    ///     )?],
-    /// )?;
-    /// assert_eq!(
-    ///     euicc::es10c::SetNicknameResponse::from_tlv(&tlv)?.result,
-    ///     euicc::es10c::SetNicknameResult::Ok,
-    /// );
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }
@@ -1040,26 +565,10 @@ macro_rules! inherent_to_tlv {
             impl $ty {
                 /// Encodes this request as an ES10 BER-TLV object.
                 ///
-                /// # Arguments
-                ///
-                /// This method takes no arguments.
-                ///
-                /// # Returns
-                ///
-                /// The encoded request TLV.
-                ///
                 /// # Errors
                 ///
                 /// Returns protocol validation or TLV construction errors from
                 /// the request-specific encoder.
-                ///
-                /// # Examples
-                ///
-                /// ```
-                /// let tlv = euicc::es10c::GetEuiccDataRequest.to_tlv()?;
-                /// assert_eq!(tlv.tag().value(), 62);
-                /// # Ok::<(), euicc::EuiccError>(())
-                /// ```
 
                 pub fn to_tlv(&self) -> Result<Tlv> {
                     <Self as EncodeTlv>::to_tlv(self)
@@ -1082,26 +591,10 @@ macro_rules! inherent_validate {
             impl $ty {
                 /// Validates the decoded ES10 response.
                 ///
-                /// # Arguments
-                ///
-                /// This method takes no arguments.
-                ///
-                /// # Returns
-                ///
-                /// `Ok(())` when the response represents success.
-                ///
                 /// # Errors
                 ///
                 /// Returns a protocol-specific [`EuiccError`] for card-level
                 /// failure result codes.
-                ///
-                /// # Examples
-                ///
-                /// ```
-                /// let response = euicc::es10c::GetEuiccDataResponse { eid: vec![0; 16] };
-                /// response.validate()?;
-                /// # Ok::<(), euicc::EuiccError>(())
-                /// ```
 
                 pub fn validate(&self) -> Result<()> {
                     <Self as CardResponse>::validate(self)

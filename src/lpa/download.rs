@@ -2,27 +2,6 @@ use crate::profile::ProfileInfo;
 use crate::{EuiccError, Result, es9p};
 
 /// Profile download stage reported through [`DownloadOptions`].
-///
-/// # Arguments
-///
-/// Variants identify the current SGP.22 download phase.
-///
-/// # Returns
-///
-/// A typed stage value.
-///
-/// # Errors
-///
-/// Constructing this enum does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::lpa::DownloadStage::Install.as_str(),
-///     "install",
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum DownloadStage {
     /// ES9+.AuthenticateClient and ES10b.AuthenticateServer phase.
@@ -35,27 +14,6 @@ pub enum DownloadStage {
 
 impl DownloadStage {
     /// Returns a stable lowercase stage name.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// Stable stage name.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::lpa::DownloadStage::AuthenticateServer.as_str(),
-    ///     "authenticate_server",
-    /// );
-    /// ```
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -67,27 +25,6 @@ impl DownloadStage {
 }
 
 /// Callbacks and optional user input for profile download.
-///
-/// # Arguments
-///
-/// Construct with [`DownloadOptions::default`] and fill only the callbacks your
-/// application needs.
-///
-/// # Returns
-///
-/// Synchronous hooks used by [`Client::download_profile`].
-///
-/// # Errors
-///
-/// Callback invocation does not return errors; returning `false` from
-/// `confirm_profile` cancels the profile download.
-///
-/// # Examples
-///
-/// ```
-/// let options = euicc::lpa::DownloadOptions::default();
-/// assert!(options.confirmation_code.is_none());
-/// ```
 #[derive(Clone, Copy, Default)]
 pub struct DownloadOptions<'a> {
     /// Confirmation code already collected from the user.

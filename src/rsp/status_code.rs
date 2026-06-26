@@ -4,28 +4,9 @@ use serde::{Deserialize, Serialize};
 
 /// Remote RSP status-code data.
 ///
-/// # Arguments
-///
-/// This struct is deserialized from `statusCodeData`.
-///
-/// # Returns
-///
-/// Subject code, reason code, and optional human-readable message.
-///
 /// # Errors
 ///
 /// Serialization and deserialization errors are returned by `serde`.
-///
-/// # Examples
-///
-/// ```
-/// let data = euicc::rsp::StatusCodeData {
-///     subject_code: "8.1".to_owned(),
-///     reason_code: "4.8".to_owned(),
-///     message: None,
-/// };
-/// assert!(data.to_string().contains("sufficient space"));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct StatusCodeData {
     /// RSP subject code.
@@ -49,29 +30,6 @@ pub struct StatusCodeData {
 
 impl StatusCodeData {
     /// Returns the best available message for this status code.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The server message, a known SGP.22 mapping, or a fallback code string.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let data = euicc::rsp::StatusCodeData {
-    ///     subject_code: "8.1".to_owned(),
-    ///     reason_code: "4.8".to_owned(),
-    ///     message: None,
-    /// };
-    /// assert!(data.message_text().contains("Profile"));
-    /// ```
     #[must_use]
     pub fn message_text(&self) -> String {
         if let Some(message) = &self.message

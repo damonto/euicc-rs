@@ -11,27 +11,9 @@ use super::{
 
 /// ISD-R logical channel opened over a `uicc` APDU transmitter.
 ///
-/// # Arguments
-///
-/// The generic `T` is the raw card transmitter from `uicc-rs`.
-///
-/// # Returns
-///
-/// A transmitter wrapper that keeps the selected ISD-R logical channel number.
-///
 /// # Errors
 ///
 /// Opening the channel returns APDU transport or status-word errors.
-///
-/// # Examples
-///
-/// ```no_run
-/// # async fn demo<T: uicc::apdu::ApduTransmitter>(tx: T) -> euicc::Result<()> {
-/// let channel = euicc::apdu::IsdrChannel::open(tx).await?;
-/// assert!(channel.logical_channel() > 0);
-/// # Ok(())
-/// # }
-/// ```
 #[derive(Debug)]
 pub struct IsdrChannel<T> {
     tx: T,
@@ -45,62 +27,21 @@ where
 {
     /// Opens the default GSMA ISD-R application on a logical channel.
     ///
-    /// # Arguments
-    ///
-    /// * `tx` - Raw APDU transmitter from `uicc-rs`.
-    ///
-    /// # Returns
-    ///
-    /// An [`IsdrChannel`] wrapping `tx` and the assigned logical channel.
-    ///
     /// # Errors
     ///
     /// Returns APDU transport, malformed response, or status-word errors from
     /// the Terminal Capability, channel-open, or SELECT commands.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T: uicc::apdu::ApduTransmitter>(tx: T) -> euicc::Result<()> {
-    /// let channel = euicc::apdu::IsdrChannel::open(tx).await?;
-    /// assert!(channel.logical_channel() <= 19);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn open(tx: T) -> Result<Self> {
         Self::open_with_aid(tx, &GSMA_ISD_R_AID).await
     }
 
     /// Opens a logical channel and selects an explicit ISD-R AID.
     ///
-    /// # Arguments
-    ///
-    /// * `tx` - Raw APDU transmitter from `uicc-rs`.
-    /// * `aid` - ISD-R application identifier to select.
-    ///
-    /// # Returns
-    ///
-    /// An [`IsdrChannel`] wrapping `tx` and the assigned logical channel.
-    ///
     /// # Errors
     ///
     /// Returns APDU transport, malformed response, or status-word errors. If
     /// SELECT fails after a channel was opened, this method attempts to close
     /// that channel before returning the SELECT error.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T: uicc::apdu::ApduTransmitter>(tx: T) -> euicc::Result<()> {
-    /// let channel = euicc::apdu::IsdrChannel::open_with_aid(
-    ///     tx,
-    ///     &euicc::apdu::GSMA_ISD_R_AID,
-    /// )
-    /// .await?;
-    /// assert!(channel.logical_channel() > 0);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn open_with_aid(tx: T, aid: &[u8]) -> Result<Self> {
         if aid.len() > MAX_SHORT_APDU_DATA_LENGTH {
             return Err(EuiccError::Apdu(uicc::apdu::ApduError::DataTooLong {
@@ -123,28 +64,6 @@ where
     }
 
     /// Returns the logical channel selected for ISD-R.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// Logical channel number assigned by the card.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T: uicc::apdu::ApduTransmitter>(tx: T) -> euicc::Result<()> {
-    /// let channel = euicc::apdu::IsdrChannel::open(tx).await?;
-    /// assert_ne!(channel.logical_channel(), 0);
-    /// # Ok(())
-    /// # }
-    /// ```
     #[must_use]
     pub const fn logical_channel(&self) -> u8 {
         self.logical_channel

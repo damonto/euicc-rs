@@ -5,47 +5,11 @@ use crate::error::{EuiccError, Result};
 
 /// Validates the top-level structure of a Bound Profile Package.
 ///
-/// # Arguments
-///
-/// * `bpp` - Candidate Bound Profile Package TLV.
-///
-/// # Returns
-///
-/// `Ok(())` when the mandatory SGP.22 BPP branches are present.
-///
 /// # Errors
 ///
 /// Returns [`EuiccError::UnexpectedTag`] when the top-level tag is not
 /// `context-specific constructed 54`, or [`EuiccError::MissingField`] when a
 /// required child branch is absent.
-///
-/// # Examples
-///
-/// ```
-/// let bpp = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(54),
-///     vec![
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(35),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(0),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(1),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(3),
-///             Vec::new(),
-///         )?,
-///     ],
-/// )?;
-/// euicc::bpp::validate_bound_profile_package(&bpp)?;
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn validate_bound_profile_package(bpp: &Tlv) -> Result<()> {
     if !bpp.tag().is(
         crate::bertlv::Class::ContextSpecific,
@@ -67,48 +31,10 @@ pub fn validate_bound_profile_package(bpp: &Tlv) -> Result<()> {
 
 /// Segments a Bound Profile Package for ES10b.LoadBoundProfilePackage.
 ///
-/// # Arguments
-///
-/// * `bpp` - Valid Bound Profile Package TLV.
-///
-/// # Returns
-///
-/// A vector of SGP.22 BPP segments. The first segment contains the BPP header
-/// and initialiseSecureChannelRequest; sequence containers are emitted as
-/// headers followed by individual encrypted elements.
-///
 /// # Errors
 ///
 /// Returns validation or TLV encoding errors from
 /// [`validate_bound_profile_package`] and [`Tlv::to_bytes`].
-///
-/// # Examples
-///
-/// ```
-/// let bpp = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(54),
-///     vec![
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(35),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(0),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(1),
-///             Vec::new(),
-///         )?,
-///         euicc::bertlv::Tlv::constructed(
-///             euicc::bertlv::Class::ContextSpecific.constructed(3),
-///             Vec::new(),
-///         )?,
-///     ],
-/// )?;
-/// assert_eq!(euicc::bpp::segment_bound_profile_package(&bpp)?.len(), 4);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub fn segment_bound_profile_package(bpp: &Tlv) -> Result<Vec<Vec<u8>>> {
     validate_bound_profile_package(bpp)?;
 
@@ -123,13 +49,13 @@ pub fn segment_bound_profile_package(bpp: &Tlv) -> Result<Vec<Vec<u8>>> {
     first.extend_from_slice(&initialise_secure_channel.to_bytes()?);
     segments.push(first);
 
-    segments.push(first_sequence_87.to_bytes()?);
+    append_sequence_header_with_first_child(&mut segments, first_sequence_87)?;
     segments.push(sequence_88.header_bytes()?);
     for item in sequence_88.children().unwrap_or_default() {
         segments.push(item.to_bytes()?);
     }
     if let Some(sequence) = second_sequence_87 {
-        segments.push(sequence.to_bytes()?);
+        append_sequence_header_with_first_child(&mut segments, sequence)?;
     }
     segments.push(sequence_86.header_bytes()?);
     for item in sequence_86.children().unwrap_or_default() {
@@ -141,6 +67,29 @@ pub fn segment_bound_profile_package(bpp: &Tlv) -> Result<Vec<Vec<u8>>> {
 
 fn child(parent: &Tlv, value: u64) -> Option<&Tlv> {
     parent.first(&Class::ContextSpecific.constructed(value))
+}
+
+fn append_sequence_header_with_first_child(
+    segments: &mut Vec<Vec<u8>>,
+    sequence: &Tlv,
+) -> Result<()> {
+    // SGP.22 SBPP sends sequenceOf87 as container header plus the first 87 TLV;
+    // remaining 87 TLVs are sent separately so the card can track SCP03t blocks.
+    let header = sequence.header_bytes()?;
+    let Some((first_child, remaining_children)) =
+        sequence.children().unwrap_or_default().split_first()
+    else {
+        segments.push(header);
+        return Ok(());
+    };
+
+    let mut first_segment = header;
+    first_segment.extend_from_slice(&first_child.to_bytes()?);
+    segments.push(first_segment);
+    for child in remaining_children {
+        segments.push(child.to_bytes()?);
+    }
+    Ok(())
 }
 
 fn required_child<'a>(parent: &'a Tlv, value: u64, name: &'static str) -> Result<&'a Tlv> {
@@ -207,6 +156,127 @@ mod tests {
         assert_eq!(segments[3], vec![0x88, 0x01, 0x88]);
         assert_eq!(segments[4], vec![0xA3, 0x03]);
         assert_eq!(segments[5], vec![0x86, 0x01, 0x86]);
+    }
+
+    #[test]
+    fn segment_bound_profile_package_splits_sequence_of_87_children() {
+        // Arrange
+        let bpp = Tlv::constructed(
+            Class::ContextSpecific.constructed(54),
+            vec![
+                Tlv::constructed(Class::ContextSpecific.constructed(35), Vec::new())
+                    .expect("initialise builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(0),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(7), [0x01])
+                            .expect("first 87 item builds"),
+                        Tlv::primitive(Class::ContextSpecific.primitive(7), [0x02])
+                            .expect("second 87 item builds"),
+                    ],
+                )
+                .expect("87 sequence builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(1),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(8), [0x03])
+                            .expect("88 item builds"),
+                    ],
+                )
+                .expect("88 sequence builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(3),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(6), [0x04])
+                            .expect("86 item builds"),
+                    ],
+                )
+                .expect("86 sequence builds"),
+            ],
+        )
+        .expect("BPP builds");
+
+        // Act
+        let segments = segment_bound_profile_package(&bpp).expect("BPP segments");
+
+        // Assert
+        assert_eq!(
+            segments,
+            vec![
+                vec![0xBF, 0x36, 0x15, 0xBF, 0x23, 0x00],
+                vec![0xA0, 0x06, 0x87, 0x01, 0x01],
+                vec![0x87, 0x01, 0x02],
+                vec![0xA1, 0x03],
+                vec![0x88, 0x01, 0x03],
+                vec![0xA3, 0x03],
+                vec![0x86, 0x01, 0x04],
+            ]
+        );
+    }
+
+    #[test]
+    fn segment_bound_profile_package_splits_optional_second_sequence_of_87_children() {
+        // Arrange
+        let bpp = Tlv::constructed(
+            Class::ContextSpecific.constructed(54),
+            vec![
+                Tlv::constructed(Class::ContextSpecific.constructed(35), Vec::new())
+                    .expect("initialise builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(0),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(7), [0x01])
+                            .expect("first 87 item builds"),
+                    ],
+                )
+                .expect("first 87 sequence builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(1),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(8), [0x03])
+                            .expect("88 item builds"),
+                    ],
+                )
+                .expect("88 sequence builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(2),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(7), [0x05])
+                            .expect("second sequence first 87 item builds"),
+                        Tlv::primitive(Class::ContextSpecific.primitive(7), [0x06])
+                            .expect("second sequence second 87 item builds"),
+                    ],
+                )
+                .expect("second 87 sequence builds"),
+                Tlv::constructed(
+                    Class::ContextSpecific.constructed(3),
+                    vec![
+                        Tlv::primitive(Class::ContextSpecific.primitive(6), [0x04])
+                            .expect("86 item builds"),
+                    ],
+                )
+                .expect("86 sequence builds"),
+            ],
+        )
+        .expect("BPP builds");
+
+        // Act
+        let segments = segment_bound_profile_package(&bpp).expect("BPP segments");
+
+        // Assert
+        assert_eq!(
+            segments,
+            vec![
+                vec![0xBF, 0x36, 0x1A, 0xBF, 0x23, 0x00],
+                vec![0xA0, 0x03, 0x87, 0x01, 0x01],
+                vec![0xA1, 0x03],
+                vec![0x88, 0x01, 0x03],
+                vec![0xA2, 0x06, 0x87, 0x01, 0x05],
+                vec![0x87, 0x01, 0x06],
+                vec![0xA3, 0x03],
+                vec![0x86, 0x01, 0x04],
+            ]
+        );
     }
 
     #[test]

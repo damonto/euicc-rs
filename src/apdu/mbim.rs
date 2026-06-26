@@ -10,32 +10,10 @@ use super::transport::{apdu_transport_error, validate_logical_channel};
 
 /// ISD-R logical channel opened through a `uicc-rs` MBIM reader.
 ///
-/// # Arguments
-///
-/// The generic `T` is the MBIM transport owned by [`uicc::mbim::Reader`].
-///
-/// # Returns
-///
-/// A transmitter wrapper that converts MBIM UICC APDU results into standard
-/// APDU response bytes for ES10 commands.
-///
 /// # Errors
 ///
 /// Opening the channel returns MBIM transport, UICC status, or logical-channel
 /// validation errors.
-///
-/// # Examples
-///
-/// ```no_run
-/// # async fn demo<T>(reader: uicc::mbim::Reader<T>) -> euicc::Result<()>
-/// # where
-/// #     T: uicc::mbim::MbimTransport,
-/// # {
-/// let channel = euicc::apdu::MbimIsdrChannel::open(reader).await?;
-/// assert!(channel.logical_channel() > 0);
-/// # Ok(())
-/// # }
-/// ```
 #[derive(Debug)]
 pub struct MbimIsdrChannel<T>
 where
@@ -52,68 +30,18 @@ where
 {
     /// Opens the default GSMA ISD-R application on an MBIM logical channel.
     ///
-    /// # Arguments
-    ///
-    /// * `reader` - An initialized MBIM reader, typically returned by
-    ///   [`uicc::mbim::open`].
-    ///
-    /// # Returns
-    ///
-    /// An [`MbimIsdrChannel`] wrapping `reader` and the assigned logical
-    /// channel.
-    ///
     /// # Errors
     ///
     /// Returns MBIM transport, UICC status, or invalid logical-channel errors.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T>(reader: uicc::mbim::Reader<T>) -> euicc::Result<()>
-    /// # where
-    /// #     T: uicc::mbim::MbimTransport,
-    /// # {
-    /// let channel = euicc::apdu::MbimIsdrChannel::open(reader).await?;
-    /// assert!(channel.logical_channel() <= 19);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn open(reader: uicc::mbim::Reader<T>) -> Result<Self> {
         Self::open_with_aid(reader, &GSMA_ISD_R_AID).await
     }
 
     /// Opens an explicit ISD-R AID on an MBIM logical channel.
     ///
-    /// # Arguments
-    ///
-    /// * `reader` - An initialized MBIM reader.
-    /// * `aid` - ISD-R application identifier to select.
-    ///
-    /// # Returns
-    ///
-    /// An [`MbimIsdrChannel`] wrapping `reader` and the assigned logical
-    /// channel.
-    ///
     /// # Errors
     ///
     /// Returns MBIM transport, UICC status, or invalid logical-channel errors.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T>(reader: uicc::mbim::Reader<T>) -> euicc::Result<()>
-    /// # where
-    /// #     T: uicc::mbim::MbimTransport,
-    /// # {
-    /// let channel = euicc::apdu::MbimIsdrChannel::open_with_aid(
-    ///     reader,
-    ///     &euicc::apdu::GSMA_ISD_R_AID,
-    /// )
-    /// .await?;
-    /// assert!(channel.logical_channel() > 0);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn open_with_aid(reader: uicc::mbim::Reader<T>, aid: &[u8]) -> Result<Self> {
         let channel = reader
             .open_channel(aid)
@@ -127,31 +55,6 @@ where
     }
 
     /// Returns the logical channel selected for ISD-R.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// Logical channel number assigned by the MBIM backend.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # async fn demo<T>(reader: uicc::mbim::Reader<T>) -> euicc::Result<()>
-    /// # where
-    /// #     T: uicc::mbim::MbimTransport,
-    /// # {
-    /// let channel = euicc::apdu::MbimIsdrChannel::open(reader).await?;
-    /// assert_ne!(channel.logical_channel(), 0);
-    /// # Ok(())
-    /// # }
-    /// ```
     #[must_use]
     pub const fn logical_channel(&self) -> u8 {
         self.logical_channel

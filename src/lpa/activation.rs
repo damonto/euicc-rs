@@ -8,25 +8,9 @@ use super::server::{parse_server_url, server_authority};
 
 /// SGP.22 activation code for profile download.
 ///
-/// # Arguments
-///
-/// Build with [`ActivationCode::from_text`] or [`ActivationCode::new`].
-///
-/// # Returns
-///
-/// Parsed SM-DP+ address plus optional matching id and OID fields.
-///
 /// # Errors
 ///
 /// Parsing returns [`EuiccError`] for malformed activation code text or URLs.
-///
-/// # Examples
-///
-/// ```
-/// let code = euicc::lpa::ActivationCode::from_text("LPA:1$smdp.example$abc")?;
-/// assert_eq!(code.matching_id.as_deref(), Some("abc"));
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActivationCode {
     /// SM-DP+ base URL.
@@ -41,27 +25,6 @@ pub struct ActivationCode {
 
 impl ActivationCode {
     /// Creates an activation code from typed parts.
-    ///
-    /// # Arguments
-    ///
-    /// * `smdp` - SM-DP+ base URL.
-    ///
-    /// # Returns
-    ///
-    /// An activation code without optional MatchingId or OID.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let smdp = url::Url::parse("https://smdp.example")?;
-    /// let code = euicc::lpa::ActivationCode::new(smdp);
-    /// assert!(code.matching_id.is_none());
-    /// # Ok::<(), url::ParseError>(())
-    /// ```
     #[must_use]
     pub const fn new(smdp: Url) -> Self {
         Self {
@@ -74,14 +37,6 @@ impl ActivationCode {
 
     /// Parses an activation code string.
     ///
-    /// # Arguments
-    ///
-    /// * `text` - Activation code text beginning with `LPA:1$`.
-    ///
-    /// # Returns
-    ///
-    /// Parsed activation code.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError::InvalidText`] for malformed input or
@@ -90,8 +45,8 @@ impl ActivationCode {
     /// # Examples
     ///
     /// ```
-    /// let code = euicc::lpa::ActivationCode::from_text("LPA:1$smdp.example$match")?;
-    /// assert_eq!(code.smdp.host_str(), Some("smdp.example"));
+    /// let code = euicc::lpa::ActivationCode::from_text("LPA:1$example.com$match")?;
+    /// assert_eq!(code.matching_id.as_deref(), Some("match"));
     /// # Ok::<(), euicc::EuiccError>(())
     /// ```
     pub fn from_text(text: &str) -> Result<Self> {
@@ -116,25 +71,9 @@ impl ActivationCode {
 
     /// Serializes this activation code as `LPA:1$...` text.
     ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// Activation code text.
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError::Url`] when the SM-DP+ URL has no host.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let code = euicc::lpa::ActivationCode::from_text("LPA:1$smdp.example$abc")?;
-    /// assert_eq!(code.to_text()?, "LPA:1$smdp.example$abc");
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn to_text(&self) -> Result<String> {
         let mut out = format!("LPA:1${}", server_authority(&self.smdp)?);
         if let Some(matching_id) = &self.matching_id {

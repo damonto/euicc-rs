@@ -11,31 +11,10 @@ use super::tlv::{optional_int, optional_string, optional_value};
 
 /// Profile metadata entry.
 ///
-/// # Arguments
-///
-/// Use [`ProfileInfo::from_tlv`] to decode from a profile-info TLV.
-///
-/// # Returns
-///
-/// A typed profile metadata record with optional fields represented as
-/// [`Option`].
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the profile-info tag or typed fields are
 /// malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::Private.constructed(3),
-///     Vec::new(),
-/// )?;
-/// let profile = euicc::profile::ProfileInfo::from_tlv(&tlv)?;
-/// assert!(profile.iccid.is_none());
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ProfileInfo {
     /// ICCID when present.
@@ -124,30 +103,9 @@ impl DecodeTlv for ProfileInfo {
 impl ProfileInfo {
     /// Decodes profile metadata from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `private constructed 3` or `context-specific constructed 37`
-    ///   profile-info TLV.
-    ///
-    /// # Returns
-    ///
-    /// A decoded [`ProfileInfo`].
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the tag or typed child fields are malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::Private.constructed(3),
-    ///     Vec::new(),
-    /// )?;
-    /// let profile = euicc::profile::ProfileInfo::from_tlv(&tlv)?;
-    /// assert!(profile.iccid.is_none());
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         <Self as DecodeTlv>::from_tlv(tlv)
     }

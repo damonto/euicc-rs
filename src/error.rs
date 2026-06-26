@@ -9,47 +9,16 @@ use crate::rsp::StatusCodeData;
 
 /// Crate-wide result type.
 ///
-/// # Arguments
-///
-/// This type alias has no arguments.
-///
-/// # Returns
-///
-/// `Ok(T)` on success or [`EuiccError`] on failure.
-///
 /// # Errors
 ///
 /// The error side is always [`EuiccError`].
-///
-/// # Examples
-///
-/// ```
-/// let value: euicc::Result<u8> = Ok(1);
-/// assert_eq!(value?, 1);
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 pub type Result<T> = std::result::Result<T, EuiccError>;
 
 /// Errors returned by BER-TLV, RSP, and card-facing helpers.
 ///
-/// # Arguments
-///
-/// Variants carry the protocol context needed to diagnose the error.
-///
-/// # Returns
-///
-/// An error value suitable for matching or user-facing display.
-///
 /// # Errors
 ///
 /// This type represents errors and does not itself return errors.
-///
-/// # Examples
-///
-/// ```
-/// let err = euicc::EuiccError::MissingField("transactionId");
-/// assert_eq!(err.to_string(), "missing field transactionId");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum EuiccError {
     /// A BER-TLV tag did not match the structure expected by the caller.
@@ -151,24 +120,6 @@ pub enum EuiccError {
 }
 
 /// Profile operation kind used by ES10c profile operations.
-///
-/// # Arguments
-///
-/// Variants map directly to SGP.22 context-specific command tags.
-///
-/// # Returns
-///
-/// A strongly typed operation discriminator.
-///
-/// # Errors
-///
-/// Constructing this enum does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(euicc::error::ProfileOperation::Enable.tag_value(), 49);
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ProfileOperation {
     /// ES10c.EnableProfile.
@@ -181,24 +132,6 @@ pub enum ProfileOperation {
 
 impl ProfileOperation {
     /// Returns the context-specific tag number for this operation.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The SGP.22 tag number used by the card command and response.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::error::ProfileOperation::Delete.tag_value(), 51);
-    /// ```
     #[must_use]
     pub const fn tag_value(self) -> u64 {
         match self {
@@ -209,24 +142,6 @@ impl ProfileOperation {
     }
 
     /// Returns the operation name used in card error strings.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The SGP.22 lower-camel-case operation name.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(euicc::error::ProfileOperation::Disable.as_str(), "disableProfile");
-    /// ```
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -245,26 +160,9 @@ impl fmt::Display for ProfileOperation {
 
 /// Result code returned by ES10c profile operations.
 ///
-/// # Arguments
-///
-/// The numeric code is decoded from the card response.
-///
-/// # Returns
-///
-/// A typed profile operation result.
-///
 /// # Errors
 ///
 /// Unknown numeric values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::error::ProfileOperationResult::from_i64(0),
-///     euicc::error::ProfileOperationResult::Ok,
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ProfileOperationResult {
     /// Operation completed successfully.
@@ -287,27 +185,6 @@ pub enum ProfileOperationResult {
 
 impl ProfileOperationResult {
     /// Decodes a signed integer result code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed card result code.
-    ///
-    /// # Returns
-    ///
-    /// The typed result code, preserving unknown values.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(matches!(
-    ///     euicc::error::ProfileOperationResult::from_i64(127),
-    ///     euicc::error::ProfileOperationResult::UndefinedError,
-    /// ));
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -340,28 +217,6 @@ impl ProfileOperationResult {
 }
 
 /// Error returned by ES10c profile operations.
-///
-/// # Arguments
-///
-/// This struct is built from the operation and card result.
-///
-/// # Returns
-///
-/// A typed error that preserves both pieces of protocol context.
-///
-/// # Errors
-///
-/// Constructing this struct does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let err = euicc::error::ProfileOperationError::new(
-///     euicc::error::ProfileOperation::Enable,
-///     euicc::error::ProfileOperationResult::DisallowedByPolicy,
-/// );
-/// assert_eq!(err.to_string(), "enableProfile,disallowedByPolicy");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("{operation},{result_name}")]
 pub struct ProfileOperationError {
@@ -374,29 +229,6 @@ pub struct ProfileOperationError {
 
 impl ProfileOperationError {
     /// Creates a profile operation error.
-    ///
-    /// # Arguments
-    ///
-    /// * `operation` - Profile operation being performed.
-    /// * `result` - Card result code.
-    ///
-    /// # Returns
-    ///
-    /// A profile operation error with the display name precomputed.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::ProfileOperationError::new(
-    ///     euicc::error::ProfileOperation::Delete,
-    ///     euicc::error::ProfileOperationResult::IccidOrAidNotFound,
-    /// );
-    /// assert_eq!(err.result_name(), "iccidOrAidNotFound");
-    /// ```
     #[must_use]
     pub fn new(operation: ProfileOperation, result: ProfileOperationResult) -> Self {
         Self {
@@ -407,35 +239,13 @@ impl ProfileOperationError {
     }
 
     /// Returns the operation-specific result label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// The SGP.22 lower-camel-case result label.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::ProfileOperationError::new(
-    ///     euicc::error::ProfileOperation::Disable,
-    ///     euicc::error::ProfileOperationResult::ProfileNotInExpectedState,
-    /// );
-    /// assert_eq!(err.result_name(), "profileNotInEnabledState");
-    /// ```
     #[must_use]
     pub fn result_name(&self) -> &str {
         &self.result_name
     }
 }
 
-/// ```
+/// Bound profile package command identifier.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BppCommandId {
     /// initialiseSecureChannel.
@@ -456,27 +266,6 @@ pub enum BppCommandId {
 
 impl BppCommandId {
     /// Decodes a signed integer command id.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed command id returned by the card.
-    ///
-    /// # Returns
-    ///
-    /// A typed command id, preserving unknown values.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::BppCommandId::from_i64(99).as_str(),
-    ///     "unknown(99)",
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -491,27 +280,6 @@ impl BppCommandId {
     }
 
     /// Returns the SGP.22 command label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case command label, or `unknown(n)`.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::BppCommandId::StoreMetadata.as_str(),
-    ///     "storeMetadata",
-    /// );
-    /// ```
     #[must_use]
     pub fn as_str(self) -> String {
         match self {
@@ -528,26 +296,9 @@ impl BppCommandId {
 
 /// Bound profile package load error reason.
 ///
-/// # Arguments
-///
-/// Values are decoded from the eUICC error branch.
-///
-/// # Returns
-///
-/// A typed BPP load reason.
-///
 /// # Errors
 ///
 /// Unknown numeric values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::error::BppErrorReason::from_i64(15).as_str(),
-///     "pprNotAllowed",
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BppErrorReason {
     /// incorrectInputValues.
@@ -588,27 +339,6 @@ pub enum BppErrorReason {
 
 impl BppErrorReason {
     /// Decodes a signed integer reason code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed reason code returned by the card.
-    ///
-    /// # Returns
-    ///
-    /// A typed reason code, preserving unknown values.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::BppErrorReason::from_i64(127).as_str(),
-    ///     "installFailedDueToUnknownError",
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -633,27 +363,6 @@ impl BppErrorReason {
     }
 
     /// Returns the SGP.22 reason label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case reason label, or `unknown(n)`.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::BppErrorReason::DataMismatch.as_str(),
-    ///     "installFailedDueToDataMismatch",
-    /// );
-    /// ```
     #[must_use]
     pub fn as_str(self) -> String {
         match self {
@@ -679,28 +388,6 @@ impl BppErrorReason {
 }
 
 /// Error returned by ES10b.LoadBoundProfilePackage.
-///
-/// # Arguments
-///
-/// This struct is built from the BPP command id and reason code.
-///
-/// # Returns
-///
-/// A typed load error suitable for matching.
-///
-/// # Errors
-///
-/// Constructing this struct does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let err = euicc::error::LoadBoundProfilePackageError::new(
-///     euicc::error::BppCommandId::LoadProfileElements,
-///     euicc::error::BppErrorReason::PprNotAllowed,
-/// );
-/// assert_eq!(err.to_string(), "loadProfileElements,pprNotAllowed");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("{command_name},{reason_name}")]
 pub struct LoadBoundProfilePackageError {
@@ -714,29 +401,6 @@ pub struct LoadBoundProfilePackageError {
 
 impl LoadBoundProfilePackageError {
     /// Creates a load-bound-profile-package error.
-    ///
-    /// # Arguments
-    ///
-    /// * `command_id` - BPP command id.
-    /// * `reason` - BPP error reason.
-    ///
-    /// # Returns
-    ///
-    /// A typed BPP load error.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::LoadBoundProfilePackageError::new(
-    ///     euicc::error::BppCommandId::from_i64(99),
-    ///     euicc::error::BppErrorReason::PprNotAllowed,
-    /// );
-    /// assert_eq!(err.command_name(), "unknown(99)");
-    /// ```
     #[must_use]
     pub fn new(command_id: BppCommandId, reason: BppErrorReason) -> Self {
         Self {
@@ -748,56 +412,12 @@ impl LoadBoundProfilePackageError {
     }
 
     /// Returns the command label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case command label, or `unknown(n)`.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::LoadBoundProfilePackageError::new(
-    ///     euicc::error::BppCommandId::StoreMetadata,
-    ///     euicc::error::BppErrorReason::DataMismatch,
-    /// );
-    /// assert_eq!(err.command_name(), "storeMetadata");
-    /// ```
     #[must_use]
     pub fn command_name(&self) -> &str {
         &self.command_name
     }
 
     /// Returns the reason label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case reason label, or `unknown(n)`.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::LoadBoundProfilePackageError::new(
-    ///     euicc::error::BppCommandId::StoreMetadata,
-    ///     euicc::error::BppErrorReason::DataMismatch,
-    /// );
-    /// assert_eq!(err.reason_name(), "installFailedDueToDataMismatch");
-    /// ```
     #[must_use]
     pub fn reason_name(&self) -> &str {
         &self.reason_name
@@ -806,26 +426,9 @@ impl LoadBoundProfilePackageError {
 
 /// AuthenticateServer error code.
 ///
-/// # Arguments
-///
-/// Values are decoded from the `authenticateResponseError` TLV branch.
-///
-/// # Returns
-///
-/// A typed authentication error code.
-///
 /// # Errors
 ///
 /// Unknown numeric values are represented by [`Self::Unknown`].
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(
-///     euicc::error::AuthenticateErrorCode::from_i64(6).as_str(),
-///     "euiccChallengeMismatch",
-/// );
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum AuthenticateErrorCode {
     /// invalidCertificate.
@@ -850,27 +453,6 @@ pub enum AuthenticateErrorCode {
 
 impl AuthenticateErrorCode {
     /// Decodes a signed integer authenticate error code.
-    ///
-    /// # Arguments
-    ///
-    /// * `value` - Signed error code returned by the card.
-    ///
-    /// # Returns
-    ///
-    /// A typed error code, preserving unknown values.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::AuthenticateErrorCode::from_i64(127).as_str(),
-    ///     "undefinedError",
-    /// );
-    /// ```
     #[must_use]
     pub const fn from_i64(value: i64) -> Self {
         match value {
@@ -887,27 +469,6 @@ impl AuthenticateErrorCode {
     }
 
     /// Returns the SGP.22 authenticate error label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case error label, or `unknown(n)`.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert_eq!(
-    ///     euicc::error::AuthenticateErrorCode::InvalidOid.as_str(),
-    ///     "invalidOid",
-    /// );
-    /// ```
     #[must_use]
     pub fn as_str(self) -> String {
         match self {
@@ -925,28 +486,6 @@ impl AuthenticateErrorCode {
 }
 
 /// Error branch returned by ES10b.AuthenticateServer.
-///
-/// # Arguments
-///
-/// This struct is built from the transaction id and card error code.
-///
-/// # Returns
-///
-/// A typed authenticate error branch.
-///
-/// # Errors
-///
-/// Constructing this struct does not return errors.
-///
-/// # Examples
-///
-/// ```
-/// let err = euicc::error::AuthenticateResponseError::new(
-///     euicc::identifier::HexBytes::from_bytes([0x01, 0x02]),
-///     euicc::error::AuthenticateErrorCode::InvalidSignature,
-/// );
-/// assert_eq!(err.to_string(), "authenticateServer,invalidSignature");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("authenticateServer,{code_name}")]
 pub struct AuthenticateResponseError {
@@ -959,29 +498,6 @@ pub struct AuthenticateResponseError {
 
 impl AuthenticateResponseError {
     /// Creates an authenticate response error.
-    ///
-    /// # Arguments
-    ///
-    /// * `transaction_id` - Transaction id associated with the failed session.
-    /// * `code` - Authenticate error code.
-    ///
-    /// # Returns
-    ///
-    /// A typed authenticate response error.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::AuthenticateResponseError::new(
-    ///     euicc::identifier::HexBytes::from_bytes([0xAA]),
-    ///     euicc::error::AuthenticateErrorCode::InvalidCertificate,
-    /// );
-    /// assert_eq!(err.code_name(), "invalidCertificate");
-    /// ```
     #[must_use]
     pub fn new(transaction_id: HexBytes, code: AuthenticateErrorCode) -> Self {
         Self {
@@ -992,28 +508,6 @@ impl AuthenticateResponseError {
     }
 
     /// Returns the authenticate error label.
-    ///
-    /// # Arguments
-    ///
-    /// This method takes no arguments.
-    ///
-    /// # Returns
-    ///
-    /// A lower-camel-case authenticate error label.
-    ///
-    /// # Errors
-    ///
-    /// This method does not return errors.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let err = euicc::error::AuthenticateResponseError::new(
-    ///     euicc::identifier::HexBytes::from_bytes([0xAA]),
-    ///     euicc::error::AuthenticateErrorCode::NoSessionContext,
-    /// );
-    /// assert_eq!(err.code_name(), "noSessionContext");
-    /// ```
     #[must_use]
     pub fn code_name(&self) -> &str {
         &self.code_name

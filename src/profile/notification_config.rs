@@ -7,27 +7,9 @@ use super::tlv::{required_utf8, required_value};
 
 /// Notification configuration entry.
 ///
-/// # Arguments
-///
-/// This struct is decoded from notification configuration info TLV children.
-///
-/// # Returns
-///
-/// Profile management operation and address.
-///
 /// # Errors
 ///
 /// Decoding errors are returned by [`NotificationConfigurationInfo::from_tlv`].
-///
-/// # Examples
-///
-/// ```
-/// let config = euicc::profile::NotificationConfiguration {
-///     operation: euicc::notification::NotificationEvent::Install,
-///     address: "smdp.example".to_owned(),
-/// };
-/// assert_eq!(config.address, "smdp.example");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NotificationConfiguration {
     /// Notification operation.
@@ -38,30 +20,9 @@ pub struct NotificationConfiguration {
 
 /// Notification configuration list.
 ///
-/// # Arguments
-///
-/// Use [`NotificationConfigurationInfo::from_tlv`] to decode from
-/// `context-specific constructed 22`.
-///
-/// # Returns
-///
-/// A list of notification configuration entries.
-///
 /// # Errors
 ///
 /// Decoding returns [`EuiccError`] when the tag or event bit string is malformed.
-///
-/// # Examples
-///
-/// ```
-/// let tlv = euicc::bertlv::Tlv::constructed(
-///     euicc::bertlv::Class::ContextSpecific.constructed(22),
-///     Vec::new(),
-/// )?;
-/// let info = euicc::profile::NotificationConfigurationInfo::from_tlv(&tlv)?;
-/// assert!(info.entries.is_empty());
-/// # Ok::<(), euicc::EuiccError>(())
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct NotificationConfigurationInfo {
     /// Notification configuration entries.
@@ -71,29 +32,9 @@ pub struct NotificationConfigurationInfo {
 impl NotificationConfigurationInfo {
     /// Decodes notification configuration info from a TLV.
     ///
-    /// # Arguments
-    ///
-    /// * `tlv` - `context-specific constructed 22` TLV.
-    ///
-    /// # Returns
-    ///
-    /// A decoded [`NotificationConfigurationInfo`].
-    ///
     /// # Errors
     ///
     /// Returns [`EuiccError`] when the tag or operation bit string is malformed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let tlv = euicc::bertlv::Tlv::constructed(
-    ///     euicc::bertlv::Class::ContextSpecific.constructed(22),
-    ///     Vec::new(),
-    /// )?;
-    /// let info = euicc::profile::NotificationConfigurationInfo::from_tlv(&tlv)?;
-    /// assert!(info.entries.is_empty());
-    /// # Ok::<(), euicc::EuiccError>(())
-    /// ```
     pub fn from_tlv(tlv: &Tlv) -> Result<Self> {
         if !tlv.tag().is(Class::ContextSpecific, Form::Constructed, 22) {
             return Err(EuiccError::UnexpectedTag {
