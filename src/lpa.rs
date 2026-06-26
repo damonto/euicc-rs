@@ -4,6 +4,7 @@ mod activation;
 mod client;
 mod download;
 mod http;
+mod rootci;
 mod server;
 mod status;
 

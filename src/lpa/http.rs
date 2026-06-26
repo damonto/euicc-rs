@@ -5,7 +5,9 @@ use reqwest::header::{CONTENT_TYPE, HeaderValue, USER_AGENT};
 use serde::{Serialize, de::DeserializeOwned};
 use url::Url;
 
-use crate::{EuiccError, Result, rootci};
+use crate::{EuiccError, Result};
+
+use super::rootci;
 
 const DEFAULT_HTTP_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_USER_AGENT: &str = "gsma-rsp-lpad";

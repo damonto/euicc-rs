@@ -24,6 +24,4 @@ pub mod primitive;
 pub mod profile;
 pub mod rsp;
 
-mod rootci;
-
 pub use error::{EuiccError, Result};
