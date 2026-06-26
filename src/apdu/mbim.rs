@@ -20,6 +20,7 @@ where
     T: uicc::mbim::MbimTransport,
 {
     reader: uicc::mbim::Reader<T>,
+    channel: uicc::mbim::LogicalChannel,
     logical_channel: u8,
     closed: AtomicBool,
 }
@@ -49,6 +50,7 @@ where
             .map_err(|err| EuiccError::Apdu(apdu_transport_error("MBIM", err)))?;
         Ok(Self {
             reader,
+            channel,
             logical_channel: mbim_logical_channel(channel)?,
             closed: AtomicBool::new(false),
         })
@@ -69,7 +71,7 @@ where
     async fn transmit(&self, request: &[u8]) -> uicc::apdu::Result<Vec<u8>> {
         let (response, status) = self
             .reader
-            .transmit_apdu(u32::from(self.logical_channel), request)
+            .transmit_apdu(self.channel, request)
             .await
             .map_err(|err| apdu_transport_error("MBIM", err))?;
         Ok(mbim_apdu_response(response, status))
@@ -78,7 +80,7 @@ where
     async fn close(&self) -> uicc::apdu::Result<()> {
         if !self.closed.swap(true, Ordering::SeqCst) {
             self.reader
-                .close_channel(u32::from(self.logical_channel))
+                .close_channel(self.channel)
                 .await
                 .map_err(|err| apdu_transport_error("MBIM", err))?;
         }
@@ -99,10 +101,11 @@ pub(super) fn mbim_apdu_response(mut response: Vec<u8>, status: u32) -> Vec<u8> 
     response
 }
 
-pub(super) fn mbim_logical_channel(channel: u32) -> Result<u8> {
-    let channel = u8::try_from(channel).map_err(|_| {
+pub(super) fn mbim_logical_channel(channel: uicc::mbim::LogicalChannel) -> Result<u8> {
+    let raw = channel.get();
+    let channel = u8::try_from(raw).map_err(|_| {
         EuiccError::Apdu(uicc::apdu::ApduError::Transport(format!(
-            "MBIM logical channel {channel} exceeds u8 range"
+            "MBIM logical channel {raw} exceeds u8 range"
         )))
     })?;
     validate_logical_channel(channel)?;

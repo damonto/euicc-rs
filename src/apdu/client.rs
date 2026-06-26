@@ -89,13 +89,13 @@ where
         let chunk_count = command.len().div_ceil(self.max_segment_size);
         for (index, chunk) in command.chunks(self.max_segment_size).enumerate() {
             let is_last = index + 1 == chunk_count;
-            let mut request =
-                ApduRequest::new(0x80, 0xE2, if is_last { 0x91 } else { 0x11 }, index as u8)
-                    .with_data(chunk.to_vec())
+            let cla = self.class_byte(0x80)?;
+            let request =
+                ApduRequest::new(cla, 0xE2, if is_last { 0x91 } else { 0x11 }, index as u8)
+                    .with_data(chunk.to_vec())?
                     .with_le(0x00);
-            self.apply_logical_channel(&mut request);
-            let encoded = request.to_bytes()?;
-            let response = ApduResponse::new(self.tx.transmit(&encoded).await?);
+            let encoded = request.to_bytes();
+            let response = ApduResponse::new(self.tx.transmit(&encoded).await?)?;
             response.require_status()?;
             out.extend_from_slice(response.data());
             if response.has_more()? {
@@ -122,10 +122,9 @@ where
 
     async fn read_command_response(&self, mut le: u8, out: &mut Vec<u8>) -> Result<()> {
         loop {
-            let mut request = ApduRequest::new(0x80, 0xC0, 0x00, 0x00).with_le(le);
-            self.apply_logical_channel(&mut request);
-            let encoded = request.to_bytes()?;
-            let response = ApduResponse::new(self.tx.transmit(&encoded).await?);
+            let request = ApduRequest::new(self.class_byte(0x80)?, 0xC0, 0x00, 0x00).with_le(le);
+            let encoded = request.to_bytes();
+            let response = ApduResponse::new(self.tx.transmit(&encoded).await?)?;
             response.require_status()?;
             out.extend_from_slice(response.data());
             if response.has_more()? {
@@ -140,15 +139,18 @@ where
         }
     }
 
-    fn apply_logical_channel(&self, request: &mut ApduRequest) {
+    fn class_byte(&self, cla: u8) -> Result<u8> {
         let Some(channel) = self.logical_channel else {
-            return;
+            return Ok(cla);
         };
         if channel < 4 {
-            request.cla = (request.cla & 0x9C) | channel;
+            return Ok((cla & 0x9C) | channel);
         } else if channel < 20 {
-            request.cla = (request.cla & 0xB0) | 0x40 | (channel - 4);
+            return Ok((cla & 0xB0) | 0x40 | (channel - 4));
         }
+        Err(EuiccError::Apdu(uicc::apdu::ApduError::Transport(format!(
+            "logical channel {channel} exceeds maximum 19"
+        ))))
     }
 }
 

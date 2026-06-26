@@ -7,18 +7,10 @@ use thiserror::Error;
 use crate::identifier::HexBytes;
 use crate::rsp::StatusCodeData;
 
-/// Crate-wide result type.
-///
-/// # Errors
-///
-/// The error side is always [`EuiccError`].
+/// Crate-wide result type whose error side is always [`EuiccError`].
 pub type Result<T> = std::result::Result<T, EuiccError>;
 
 /// Errors returned by BER-TLV, RSP, and card-facing helpers.
-///
-/// # Errors
-///
-/// This type represents errors and does not itself return errors.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum EuiccError {
     /// A BER-TLV tag did not match the structure expected by the caller.

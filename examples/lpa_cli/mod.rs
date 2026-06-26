@@ -88,7 +88,7 @@ where
             Ok(())
         }
         ExampleCommand::Profiles => {
-            let profiles = client.list_profiles(None, Vec::new()).await?;
+            let profiles = client.list_profiles(None, &[]).await?;
             if profiles.is_empty() {
                 println!("No profiles found");
                 return Ok(());

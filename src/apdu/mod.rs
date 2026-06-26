@@ -155,11 +155,11 @@ mod tests {
     #[test]
     fn mbim_logical_channel_rejects_out_of_range_values() {
         // Arrange and Act
-        let zero = mbim_logical_channel(0);
-        let too_high = mbim_logical_channel(u32::from(MAX_LOGICAL_CHANNEL) + 1);
+        let too_high = uicc::mbim::LogicalChannel::new(u32::from(MAX_LOGICAL_CHANNEL) + 1)
+            .expect("fixture logical channel builds");
+        let too_high = mbim_logical_channel(too_high);
 
         // Assert
-        assert!(zero.is_err());
         assert!(too_high.is_err());
     }
 }

@@ -379,12 +379,12 @@ where
     pub async fn list_profiles(
         &self,
         search_criterion: Option<ProfileSearchCriterion>,
-        tags: Vec<Tag>,
+        tags: &[Tag],
     ) -> Result<Vec<ProfileInfo>> {
         self.apdu
             .transmit(&ProfileInfoListRequest {
                 search_criterion,
-                tags,
+                tags: tags.to_vec(),
             })
             .await
             .map(|response| response.profiles)
@@ -533,11 +533,6 @@ where
     ///
     /// Returns [`EuiccError::Http`] when the default reqwest client cannot be
     /// built.
-    ///
-    /// # fn demo<T>(apdu: euicc::apdu::EuiccApdu<T>) -> euicc::Result<()>
-    /// # where
-    /// #     T: uicc::apdu::ApduTransmitter,
-    /// # {
     pub fn with_reqwest(apdu: EuiccApdu<T>) -> Result<Self> {
         Ok(Self::new(apdu, ReqwestJsonHttpClient::new()?))
     }

@@ -16,12 +16,7 @@ pub enum TlvBody {
     Constructed(Vec<Tlv>),
 }
 
-/// BER-TLV object.
-///
-/// # Errors
-///
-/// Parsing and encoding return [`EuiccError`] when the wire representation is
-/// malformed or too large.
+/// BER-TLV object with a validated tag and either primitive bytes or children.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tlv {
     tag: Tag,
@@ -218,9 +213,8 @@ impl Tlv {
     /// Returns [`EuiccError::LengthTooLarge`] when nested content exceeds
     /// `0xFF_FF_FF` bytes.
     pub fn encoded_len(&self) -> Result<usize> {
-        Ok(self.tag.as_bytes().len()
-            + encode_length(self.content_len()?)?.len()
-            + self.content_len()?)
+        let content_len = self.content_len()?;
+        Ok(self.tag.as_bytes().len() + encode_length(content_len)?.len() + content_len)
     }
 
     /// Returns the encoded tag and length bytes.

@@ -1069,7 +1069,7 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 [[package]]
 name = "uicc-rs"
 version = "0.1.0"
-source = "git+https://github.com/damonto/uicc-rs.git?branch=main#e8e139ed45b8a30af5dcb8f80f0c80df3e8c0582"
+source = "git+https://github.com/damonto/uicc-rs.git?branch=main#f027e3d32705e41e129374dbe183576c07055350"
 dependencies = [
  "async-trait",
  "bytes",

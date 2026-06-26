@@ -4,6 +4,7 @@ use std::error::Error;
 use euicc::apdu::EuiccApdu;
 use euicc::lpa::Client;
 use uicc::qcom::qmi::{DirectDialer, ProxyDialer};
+use uicc::qcom::uim::SlotId;
 
 #[path = "lpa_cli/mod.rs"]
 mod lpa_cli;
@@ -13,7 +14,7 @@ use lpa_cli::{ExampleCommand, ExampleResult};
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Cli {
     device: String,
-    slot: u8,
+    slot: SlotId,
     transport: QmiTransport,
     command: ExampleCommand,
 }
@@ -48,7 +49,8 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
         command,
     } = cli;
     println!(
-        "Using QMI device: {device}, slot: {slot}, transport: {}",
+        "Using QMI device: {device}, slot: {}, transport: {}",
+        slot.get(),
         transport.name()
     );
 
@@ -72,13 +74,13 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
 
 async fn run_with_transport<T>(
     transport: T,
-    slot: u8,
+    slot: SlotId,
     command: ExampleCommand,
 ) -> std::result::Result<(), Box<dyn Error>>
 where
     T: uicc::qcom::Transport,
 {
-    let reader = uicc::qcom::uim::Reader::new(transport, slot, 0).await?;
+    let reader = uicc::qcom::uim::Reader::new(transport, slot).await?;
     let apdu = EuiccApdu::open_qcom(reader, 254).await?;
     let client = Client::with_reqwest(apdu)?;
     let command_result = lpa_cli::run_command(&client, command).await;
@@ -91,7 +93,7 @@ where
 fn parse_cli() -> ExampleResult<Cli> {
     let mut args = env::args().skip(1);
     let mut device = "/dev/cdc-wdm0".to_owned();
-    let mut slot = 1u8;
+    let mut slot = SlotId::ONE;
     let mut direct = false;
     let mut proxy_address = None;
 
@@ -162,14 +164,11 @@ fn transport_from_options(
     })
 }
 
-fn parse_slot(value: &str) -> ExampleResult<u8> {
+fn parse_slot(value: &str) -> ExampleResult<SlotId> {
     let slot = value
         .parse::<u8>()
         .map_err(|error| lpa_cli::input_error(&format!("invalid slot: {error}")))?;
-    if !(1..=5).contains(&slot) {
-        return Err(lpa_cli::input_error("slot must be in the 1..=5 range"));
-    }
-    Ok(slot)
+    SlotId::new(slot).map_err(|error| lpa_cli::input_error(&error.to_string()))
 }
 
 fn proxy_address(value: &str) -> String {

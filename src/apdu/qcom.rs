@@ -19,6 +19,7 @@ where
     T: uicc::qcom::Transport,
 {
     reader: uicc::qcom::uim::Reader<T>,
+    channel: uicc::qcom::uim::LogicalChannel,
     logical_channel: u8,
     closed: AtomicBool,
 }
@@ -52,10 +53,12 @@ where
             .open_logical_channel(aid)
             .await
             .map_err(|err| EuiccError::Apdu(apdu_transport_error("QCOM", err)))?;
-        validate_logical_channel(channel)?;
+        let logical_channel = channel.get();
+        validate_logical_channel(logical_channel)?;
         Ok(Self {
             reader,
-            logical_channel: channel,
+            channel,
+            logical_channel,
             closed: AtomicBool::new(false),
         })
     }
@@ -74,7 +77,7 @@ where
 {
     async fn transmit(&self, request: &[u8]) -> uicc::apdu::Result<Vec<u8>> {
         self.reader
-            .send_apdu(self.logical_channel, request)
+            .send_apdu(self.channel, request)
             .await
             .map_err(|err| apdu_transport_error("QCOM", err))
     }
@@ -82,7 +85,7 @@ where
     async fn close(&self) -> uicc::apdu::Result<()> {
         if !self.closed.swap(true, Ordering::SeqCst) {
             self.reader
-                .close_logical_channel(self.logical_channel)
+                .close_logical_channel(self.channel)
                 .await
                 .map_err(|err| apdu_transport_error("QCOM", err))?;
         }

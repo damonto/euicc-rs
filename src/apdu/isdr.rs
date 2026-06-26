@@ -91,7 +91,7 @@ async fn send_terminal_capability<T>(tx: &T) -> Result<()>
 where
     T: ApduTransmitter,
 {
-    let response = ApduResponse::new(tx.transmit(&TERMINAL_CAPABILITY_APDU).await?);
+    let response = ApduResponse::new(tx.transmit(&TERMINAL_CAPABILITY_APDU).await?)?;
     let sw = response.status_word()?;
     if sw != StatusWord::OK && !sw.has_more() {
         return Err(EuiccError::Apdu(uicc::apdu::ApduError::Status(sw)));
@@ -105,8 +105,8 @@ where
 {
     let request = ApduRequest::new(0x00, 0x70, 0x00, 0x00)
         .with_le(0x01)
-        .to_bytes()?;
-    let response = ApduResponse::new(tx.transmit(&request).await?);
+        .to_bytes();
+    let response = ApduResponse::new(tx.transmit(&request).await?)?;
     let sw = response.status_word()?;
     if sw != StatusWord::OK {
         return Err(EuiccError::Apdu(uicc::apdu::ApduError::Status(sw)));
@@ -128,9 +128,9 @@ where
     T: ApduTransmitter,
 {
     let request = ApduRequest::new(class_byte_for_channel(0x00, channel)?, 0xA4, 0x04, 0x00)
-        .with_data(aid.to_vec());
-    let encoded = request.to_bytes()?;
-    let response = ApduResponse::new(tx.transmit(&encoded).await?);
+        .with_data(aid.to_vec())?;
+    let encoded = request.to_bytes();
+    let response = ApduResponse::new(tx.transmit(&encoded).await?)?;
     let sw = response.status_word()?;
     if sw != StatusWord::OK && !sw.has_more() {
         return Err(EuiccError::Apdu(uicc::apdu::ApduError::Status(sw)));
@@ -156,8 +156,8 @@ where
     }
     let request = ApduRequest::new(0x00, 0x70, 0x80, channel)
         .with_le(0x00)
-        .to_bytes()?;
-    let response = ApduResponse::new(tx.transmit(&request).await?);
+        .to_bytes();
+    let response = ApduResponse::new(tx.transmit(&request).await?)?;
     let sw = response.status_word()?;
     if sw != StatusWord::OK {
         return Err(uicc::apdu::ApduError::Status(sw));
