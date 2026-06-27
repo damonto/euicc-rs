@@ -55,6 +55,9 @@ pub enum EuiccError {
         /// Actual byte width.
         got: usize,
     },
+    /// A BER integer value has no content octets.
+    #[error("invalid integer length")]
+    InvalidIntegerLength,
     /// A BER bit string has invalid padding metadata.
     #[error("invalid bit-string padding")]
     InvalidBitStringPadding,

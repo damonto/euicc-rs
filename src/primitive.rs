@@ -22,11 +22,14 @@ pub fn encode_i64(value: i64) -> Vec<u8> {
 ///
 /// # Errors
 ///
-/// Returns [`EuiccError::IntegerTooLarge`] when `data.len() > max_bytes`.
+/// Returns [`EuiccError::InvalidIntegerLength`] when `data` is empty, or
+/// [`EuiccError::IntegerTooLarge`] when the integer does not fit `max_bytes`.
 pub fn decode_i64(data: &[u8], max_bytes: usize) -> Result<i64> {
     if data.is_empty() {
-        return Ok(0);
+        return Err(EuiccError::InvalidIntegerLength);
     }
+    let data = trim_redundant_sign_bytes(data);
+    let max_bytes = max_bytes.min(8);
     if data.len() > max_bytes {
         return Err(EuiccError::IntegerTooLarge {
             max: max_bytes,
@@ -39,6 +42,19 @@ pub fn decode_i64(data: &[u8], max_bytes: usize) -> Result<i64> {
     let start = bytes.len() - data.len();
     bytes[start..].copy_from_slice(data);
     Ok(i64::from_be_bytes(bytes))
+}
+
+fn trim_redundant_sign_bytes(data: &[u8]) -> &[u8] {
+    let mut start = 0usize;
+    while start < data.len() - 1 {
+        let redundant_positive = data[start] == 0x00 && data[start + 1] & 0x80 == 0x00;
+        let redundant_negative = data[start] == 0xFF && data[start + 1] & 0x80 == 0x80;
+        if !redundant_positive && !redundant_negative {
+            break;
+        }
+        start += 1;
+    }
+    &data[start..]
 }
 
 /// Encodes a BER boolean.
@@ -136,6 +152,54 @@ mod tests {
             assert_eq!(actual, encoded);
             assert_eq!(decoded, value);
         }
+    }
+
+    #[test]
+    fn integer_decodes_go_sign_extended_fixtures() {
+        // Arrange
+        let fixtures = [
+            (0, vec![0x00, 0x00]),
+            (127, vec![0x00, 0x7F]),
+            (-128, vec![0xFF, 0x80]),
+            (-1, vec![0xFF, 0xFF]),
+            (1000, vec![0x00, 0x00, 0x03, 0xE8]),
+            (-1000, vec![0xFF, 0xFF, 0xFC, 0x18]),
+        ];
+
+        for (value, encoded) in fixtures {
+            // Act
+            let decoded = decode_i64(&encoded, 8).expect("sign-extended integer decodes");
+
+            // Assert
+            assert_eq!(decoded, value);
+        }
+    }
+
+    #[test]
+    fn integer_rejects_go_error_fixtures() {
+        // Arrange
+        let empty = decode_i64(&[], 1);
+        let positive_overflow = decode_i64(&[0x00, 0x80], 1);
+        let negative_overflow = decode_i64(&[0xFF, 0x7F], 1);
+
+        // Act
+        let positive_boundary = decode_i64(&[0x00, 0x7F], 1).expect("int8 max decodes");
+        let negative_boundary = decode_i64(&[0xFF, 0x80], 1).expect("int8 min decodes");
+        let minus_one = decode_i64(&[0xFF, 0xFF], 1).expect("minus one decodes");
+
+        // Assert
+        assert!(matches!(empty, Err(EuiccError::InvalidIntegerLength)));
+        assert!(matches!(
+            positive_overflow,
+            Err(EuiccError::IntegerTooLarge { max: 1, got: 2 })
+        ));
+        assert!(matches!(
+            negative_overflow,
+            Err(EuiccError::IntegerTooLarge { max: 1, got: 2 })
+        ));
+        assert_eq!(positive_boundary, 127);
+        assert_eq!(negative_boundary, -128);
+        assert_eq!(minus_one, -1);
     }
 
     #[test]
