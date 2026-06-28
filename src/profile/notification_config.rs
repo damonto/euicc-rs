@@ -12,8 +12,8 @@ use super::tlv::{required_utf8, required_value};
 /// Decoding errors are returned by [`NotificationConfigurationInfo::from_tlv`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NotificationConfiguration {
-    /// Notification operation.
-    pub operation: NotificationEvent,
+    /// Profile-management operations sharing the same notification address.
+    pub operations: Vec<NotificationEvent>,
     /// Destination address.
     pub address: String,
 }
@@ -45,34 +45,52 @@ impl NotificationConfigurationInfo {
         let children = tlv.children().unwrap_or_default();
         let mut entries = Vec::with_capacity(children.len());
         for child in children {
-            let operation = notification_event_from_config_bits(required_value(
+            if !child.tag().is(Class::Universal, Form::Constructed, 16) {
+                return Err(EuiccError::UnexpectedTag {
+                    expected: "notificationConfiguration",
+                    actual: child.tag().hex(),
+                });
+            }
+            let operations = notification_events_from_config_bits(required_value(
                 child,
-                Class::Universal.primitive(3),
+                Class::ContextSpecific.primitive(0),
                 "profileManagementOperation",
             )?)?;
-            let address =
-                required_utf8(child, Class::Universal.primitive(12), "notificationAddress")?;
-            entries.push(NotificationConfiguration { operation, address });
+            let address = required_utf8(
+                child,
+                Class::ContextSpecific.primitive(1),
+                "notificationAddress",
+            )?;
+            entries.push(NotificationConfiguration {
+                operations,
+                address,
+            });
         }
         Ok(Self { entries })
     }
 }
-fn notification_event_from_config_bits(data: &[u8]) -> Result<NotificationEvent> {
-    for (index, bit) in decode_bit_string(data)?.into_iter().enumerate() {
+fn notification_events_from_config_bits(data: &[u8]) -> Result<Vec<NotificationEvent>> {
+    let bits = decode_bit_string(data)?;
+    let mut events = Vec::with_capacity(bits.len().min(4));
+    for (index, bit) in bits.into_iter().enumerate() {
         if !bit {
             continue;
         }
-        return match index {
-            0 => Ok(NotificationEvent::Install),
-            1 => Ok(NotificationEvent::Enable),
-            2 => Ok(NotificationEvent::Disable),
-            3 => Ok(NotificationEvent::Delete),
+        let event = match index {
+            0 => NotificationEvent::Install,
+            1 => NotificationEvent::Enable,
+            2 => NotificationEvent::Disable,
+            3 => NotificationEvent::Delete,
             _ => Err(EuiccError::MalformedTlv(
                 "notification configuration operation",
-            )),
+            ))?,
         };
+        events.push(event);
     }
-    Err(EuiccError::MalformedTlv(
-        "notification configuration operation is missing",
-    ))
+    if events.is_empty() {
+        return Err(EuiccError::MalformedTlv(
+            "notification configuration operation is missing",
+        ));
+    }
+    Ok(events)
 }

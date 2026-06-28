@@ -65,11 +65,11 @@ mod tests {
             Class::Universal.constructed(16),
             vec![
                 Tlv::primitive(
-                    Class::Universal.primitive(3),
+                    Class::ContextSpecific.primitive(0),
                     NotificationEvent::Install.to_bytes(),
                 )
                 .expect("operation TLV builds"),
-                Tlv::primitive(Class::Universal.primitive(12), b"smdp.example")
+                Tlv::primitive(Class::ContextSpecific.primitive(1), b"smdp.example")
                     .expect("address TLV builds"),
             ],
         )
@@ -82,8 +82,44 @@ mod tests {
 
         // Assert
         assert_eq!(info.entries.len(), 1);
-        assert_eq!(info.entries[0].operation, NotificationEvent::Install);
+        assert_eq!(info.entries[0].operations, vec![NotificationEvent::Install]);
         assert_eq!(info.entries[0].address, "smdp.example");
+    }
+
+    #[test]
+    fn profile_info_decodes_authenticate_client_profile_metadata() {
+        // Arrange
+        let tlv = Tlv::from_base64(concat!(
+            "vyWBjVoKmFgyJCBCSCZpZJEGQ01MSU5LkgdDTUlfR0RTthowGIACBHCBEmNvbnN1",
+            "bWVyLnJzcC53b3JsZLcdgANU9CGBCv////////////+CCv////////////+/djLi",
+            "MOEiwSA6yVumdHCV8I0+WJoSqtB4vuLOqh4/PnGVvchLJYeB2OMK2wgAAAAAAAAAAQ==",
+        ))
+        .expect("profile metadata TLV parses");
+
+        // Act
+        let profile = ProfileInfo::from_tlv(&tlv).expect("profile decodes");
+
+        // Assert
+        assert_eq!(
+            profile.iccid.as_ref().map(ToString::to_string),
+            Some("89852342022484629646".to_owned())
+        );
+        assert_eq!(profile.profile_name.as_deref(), Some("CMI_GDS"));
+        assert_eq!(profile.service_provider_name.as_deref(), Some("CMLINK"));
+        let config = profile
+            .notification_configuration
+            .as_ref()
+            .expect("notification configuration is present");
+        assert_eq!(config.entries.len(), 1);
+        assert_eq!(
+            config.entries[0].operations,
+            vec![
+                NotificationEvent::Enable,
+                NotificationEvent::Disable,
+                NotificationEvent::Delete,
+            ]
+        );
+        assert_eq!(config.entries[0].address, "consumer.rsp.world");
     }
 
     #[test]
@@ -142,14 +178,14 @@ mod tests {
     }
 
     #[test]
-    fn notification_configuration_rejects_context_specific_automatic_tags() {
+    fn notification_configuration_rejects_universal_automatic_tags() {
         // Arrange
         let entry = Tlv::constructed(
             Class::Universal.constructed(16),
             vec![
-                Tlv::primitive(Class::ContextSpecific.primitive(0), [0x04, 0xC0])
+                Tlv::primitive(Class::Universal.primitive(3), [0x04, 0xC0])
                     .expect("operation TLV builds"),
-                Tlv::primitive(Class::ContextSpecific.primitive(1), b"smdp.example")
+                Tlv::primitive(Class::Universal.primitive(12), b"smdp.example")
                     .expect("address TLV builds"),
             ],
         )
@@ -162,5 +198,32 @@ mod tests {
 
         // Assert
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn notification_configuration_rejects_missing_address() {
+        // Arrange
+        let entry = Tlv::constructed(
+            Class::Universal.constructed(16),
+            vec![
+                Tlv::primitive(
+                    Class::ContextSpecific.primitive(0),
+                    NotificationEvent::Install.to_bytes(),
+                )
+                .expect("operation TLV builds"),
+            ],
+        )
+        .expect("entry TLV builds");
+        let tlv = Tlv::constructed(Class::ContextSpecific.constructed(22), vec![entry])
+            .expect("configuration TLV builds");
+
+        // Act
+        let result = NotificationConfigurationInfo::from_tlv(&tlv);
+
+        // Assert
+        assert!(matches!(
+            result,
+            Err(crate::EuiccError::MissingField("notificationAddress"))
+        ));
     }
 }
