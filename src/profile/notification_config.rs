@@ -1,7 +1,7 @@
+use crate::bertlv::primitive::decode_bit_string;
 use crate::bertlv::{Class, Form, Tlv};
 use crate::error::{EuiccError, Result};
 use crate::notification::NotificationEvent;
-use crate::primitive::decode_bit_string;
 
 use super::tlv::{required_utf8, required_value};
 

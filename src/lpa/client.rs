@@ -141,14 +141,12 @@ where
         address: &Url,
     ) -> Result<es9p::InitiateAuthenticationResponse> {
         let request = es9p::InitiateAuthenticationRequest {
-            euicc_challenge: crate::identifier::OctetString::from_bytes(
-                self.euicc_challenge().await?,
-            ),
+            euicc_challenge: crate::bertlv::OctetString::from_bytes(self.euicc_challenge().await?),
             euicc_info1: self.euicc_info1().await?,
             smdp_address: server_authority(address)?,
         };
         let url = request.url(address)?;
-        self.send_json_checked(&url, &request).await
+        self.send_json(&url, &request).await
     }
 
     /// Runs ES10b.AuthenticateServer and ES9+.AuthenticateClient.
@@ -167,7 +165,7 @@ where
             authenticate_server_response: response.response,
         };
         let url = request.url(address)?;
-        self.send_json_checked(&url, &request).await
+        self.send_json(&url, &request).await
     }
 
     /// Runs ES10b.PrepareDownload and ES9+.GetBoundProfilePackage.
@@ -186,7 +184,7 @@ where
             prepare_download_response: response.response,
         };
         let url = request.url(address)?;
-        self.send_json_checked(&url, &request).await
+        self.send_json(&url, &request).await
     }
 
     /// Installs a Bound Profile Package through ES10b.LoadBoundProfilePackage.
@@ -342,7 +340,7 @@ where
             pending_notification: pending.pending_notification.clone(),
         };
         let url = request.url(&address)?;
-        self.send_json_checked(&url, &request).await
+        self.send_json(&url, &request).await
     }
 
     /// Cancels an RSP session locally and remotely.
@@ -368,7 +366,7 @@ where
             cancel_session_response: card_response.response,
         };
         let url = request.url(address)?;
-        self.send_json_checked(&url, &request).await
+        self.send_json(&url, &request).await
     }
 
     /// Lists profiles with optional ES10c search criteria and tag list.
@@ -481,16 +479,12 @@ where
             authenticate_server_response: card_response.response,
         };
         let url = request.url(address)?;
-        self.send_json_checked::<_, es11::AuthenticateClientResponse>(&url, &request)
+        self.send_json::<_, es11::AuthenticateClientResponse>(&url, &request)
             .await
             .map(|response| response.event_entries)
     }
 
-    async fn send_json_checked<Request, Response>(
-        &self,
-        url: &Url,
-        request: &Request,
-    ) -> Result<Response>
+    async fn send_json<Request, Response>(&self, url: &Url, request: &Request) -> Result<Response>
     where
         Request: Serialize + Sync,
         Response: DeserializeOwned + Send + RspExecutionStatus,

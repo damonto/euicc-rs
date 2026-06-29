@@ -1,8 +1,9 @@
+use crate::bertlv::primitive::decode_bit_string;
 use crate::bertlv::{Class, DecodeTlv, Form, Tlv};
 use crate::error::{EuiccError, Result};
-use crate::identifier::{Iccid, IsdpAid, ProfileClass};
-use crate::primitive::decode_bit_string;
+use crate::identifier::{Iccid, IsdpAid};
 
+use super::ProfileClass;
 use super::icon::{ProfileIcon, ProfileIconType};
 use super::notification_config::NotificationConfigurationInfo;
 use super::operator::OperatorId;

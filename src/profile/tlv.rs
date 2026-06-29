@@ -1,6 +1,6 @@
+use crate::bertlv::primitive::decode_i64;
 use crate::bertlv::{Tag, Tlv};
 use crate::error::{EuiccError, Result};
-use crate::primitive::decode_i64;
 
 pub(super) fn optional_value(parent: &Tlv, tag: Tag) -> Option<&[u8]> {
     parent.first(&tag).and_then(Tlv::value)

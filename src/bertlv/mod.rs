@@ -1,11 +1,14 @@
 //! BER-TLV encoding and decoding primitives.
 
 mod length;
+mod octet_string;
+pub mod primitive;
 mod tag;
 mod tlv;
 mod traits;
 
 pub use length::{decode_length, encode_length};
+pub use octet_string::OctetString;
 pub use tag::{Class, Form, Tag};
 pub use tlv::{Tlv, TlvBody};
 pub use traits::{DecodeTlv, EncodeTlv};

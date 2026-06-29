@@ -17,11 +17,12 @@ pub mod es10b;
 pub mod es10c;
 pub mod es11;
 pub mod es9p;
+pub mod hex;
 pub mod identifier;
 pub mod lpa;
 pub mod notification;
-pub mod primitive;
 pub mod profile;
 pub mod rsp;
 
+pub use bertlv::primitive;
 pub use error::{EuiccError, Result};

@@ -3,8 +3,8 @@ use base64::engine::general_purpose::STANDARD;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
 use crate::error::{EuiccError, Result};
-use crate::identifier::decode_base64;
 
+use super::octet_string::decode_base64;
 use super::{MAX_LENGTH, Tag, decode_length, encode_length};
 
 /// BER-TLV body, separated by primitive and constructed forms.

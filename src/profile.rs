@@ -1,5 +1,6 @@
 //! Profile metadata decoded from ES10c responses.
 
+mod class;
 mod icon;
 mod info;
 mod notification_config;
@@ -7,6 +8,7 @@ mod operator;
 mod state;
 mod tlv;
 
+pub use class::ProfileClass;
 pub use icon::{ProfileIcon, ProfileIconType};
 pub use info::ProfileInfo;
 pub use notification_config::{NotificationConfiguration, NotificationConfigurationInfo};
@@ -16,7 +18,6 @@ pub use state::ProfileState;
 #[cfg(test)]
 mod tests {
     use crate::bertlv::{Class, Tlv};
-    use crate::identifier::ProfileClass;
     use crate::notification::NotificationEvent;
 
     use super::*;

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::error::{EuiccError, Result};
-use crate::identifier::encode_hex_upper;
+use crate::hex::encode_hex_upper;
 
 const MAX_TAG_BYTES: usize = 11;
 

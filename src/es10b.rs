@@ -3,6 +3,7 @@
 use sha2::{Digest, Sha256};
 
 use crate::apdu::{CardRequest, CardResponse};
+use crate::bertlv::primitive::{decode_bool, decode_i64, encode_bit_string};
 use crate::bertlv::{Class, DecodeTlv, EncodeTlv, Form, Tag, Tlv};
 use crate::bpp::validate_bound_profile_package;
 use crate::error::{
@@ -13,7 +14,6 @@ use crate::identifier::{HexBytes, Imei, IsdpAid};
 use crate::notification::{
     NotificationEvent, NotificationMetadata, PendingNotification, SequenceNumber,
 };
-use crate::primitive::{decode_bool, decode_i64, encode_bit_string};
 
 /// ES10b.PrepareDownload request.
 ///

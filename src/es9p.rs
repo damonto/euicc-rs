@@ -3,11 +3,11 @@
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::bertlv::Tlv;
+use crate::bertlv::{OctetString, Tlv};
 use crate::es10b::{
     AuthenticateServerRequest, LoadBoundProfilePackageRequest, PrepareDownloadRequest,
 };
-use crate::identifier::{HexBytes, Imei, OctetString};
+use crate::identifier::{HexBytes, Imei};
 use crate::rsp::{ExecutionStatus, Header};
 use crate::{EuiccError, Result};
 

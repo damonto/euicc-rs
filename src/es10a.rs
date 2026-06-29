@@ -1,9 +1,9 @@
 //! ES10a card functions for SM-DP+ address configuration.
 
 use crate::apdu::{CardRequest, CardResponse};
+use crate::bertlv::primitive::decode_i64;
 use crate::bertlv::{Class, DecodeTlv, EncodeTlv, Form, Tag, Tlv};
 use crate::error::{EuiccError, Result};
-use crate::primitive::decode_i64;
 
 /// ES10a.GetEuiccConfiguredAddresses request.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]

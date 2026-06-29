@@ -1,9 +1,9 @@
 //! Notification metadata and search criteria types.
 
+use crate::bertlv::primitive::{decode_bit_string, decode_i64, encode_bit_string, encode_i64};
 use crate::bertlv::{Class, DecodeTlv, Form, Tlv};
 use crate::error::{EuiccError, Result};
 use crate::identifier::Iccid;
-use crate::primitive::{decode_bit_string, decode_i64, encode_bit_string, encode_i64};
 
 /// Notification sequence number.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

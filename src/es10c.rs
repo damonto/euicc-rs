@@ -3,11 +3,11 @@
 pub use crate::error::{ProfileOperation, ProfileOperationError, ProfileOperationResult};
 
 use crate::apdu::{CardRequest, CardResponse};
+use crate::bertlv::primitive::{decode_i64, encode_bit_string, encode_bool, encode_i64};
 use crate::bertlv::{Class, DecodeTlv, EncodeTlv, Form, Tag, Tlv};
 use crate::error::{EuiccError, Result};
-use crate::identifier::{Iccid, IsdpAid, ProfileClass};
-use crate::primitive::{decode_i64, encode_bit_string, encode_bool, encode_i64};
-use crate::profile::ProfileInfo;
+use crate::identifier::{Iccid, IsdpAid};
+use crate::profile::{ProfileClass, ProfileInfo};
 
 /// Profile identifier used by ES10c profile operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
